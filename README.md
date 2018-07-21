@@ -1,1 +1,4 @@
-# ScheduleTask
+# 分页式任务调度器
+支持文件，脚本，API任务的定时运行
+master 管理所有的worker, 任务设置，相关界面管理， 以及故障转移
+worker真正的任务指行者

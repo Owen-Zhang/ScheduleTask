@@ -1,0 +1,107 @@
+<div class="row">
+<div class="span12">
+
+<div class="widget ">
+<div class="widget-header">
+<i class="icon-plus"></i>
+<h3>添加worker</h3>
+</div>
+
+<div class="widget-content">
+
+<div class="alert alert-danger hide" role="alert"></div>
+
+<form id="add-worker" method="post" class="form-horizontal">
+<fieldset>
+
+<div class="control-group">
+    <label class="control-label" for="worker_name">机器名</label>
+    <div class="controls">
+        <input type="text" name="worker_name" class="span6" id="worker_name">
+    </div>
+</div>
+
+<div class="control-group">
+	<label class="control-label" for="systeminfo">系统</label>
+	<div class="controls">
+	    <select id="systeminfo">
+	        <option value="windows">windows</option>
+			<option value="linux">linux</option>
+	    </select>
+	</div>
+</div>
+
+<div class="control-group">
+    <label class="control-label" for="worker_url">IP地址</label>
+    <div class="controls">
+        <input type="text" name="worker_url" class="span6" id="worker_url">
+    </div>
+</div>
+
+<div class="control-group">
+    <label class="control-label" for="worker_port">端口</label>
+    <div class="controls">
+        <input type="text" name="worker_port" class="span2" id="worker_port">
+    </div>
+</div>
+
+<div class="control-group">
+    <label class="control-label" for="worker_note">说明</label>
+    <div class="controls">
+        <textarea name="worker_note" class="span6" id="worker_note" rows="6"></textarea>
+    </div>
+</div>
+
+<br />
+
+
+<div class="form-actions">
+<button type="submit" class="btn btn-primary btn-save">保 存</button>
+<a href="{{urlfor "WorkerController.List"}}" class="btn">返 回</a>
+</div>
+</fieldset>
+</form>
+
+</div>
+</div>
+</div>
+</div>
+
+<script>
+$(function () {
+    $(".btn-save").on("click", function () {
+        $(".alert").hide();
+        $(this).attr('disabled', true);
+        UI.ShowLoading();
+
+        $.ajax({
+            url: "/worker/savework" + "?random="+ new Date(),
+            type: "POST",
+            async: true,
+            data: {
+                "worker_name": $("#worker_name").val(),
+                "worker_systeminfo": $("#systeminfo").val(),
+                "worker_url": $("#worker_url").val(),
+                "worker_port": $("#worker_port").val(),
+				"worker_note": $("#note").val()
+            },
+            success: function (result) {
+                if (result.status == 0) {
+                    window.location.href = '/worker/list';
+                } else {
+                    UI.HideLoading();
+
+                    $(".alert").text(result.msg).show();
+                    $(".btn-save").attr('disabled', false);
+                }
+            },
+            error: function() {
+                UI.HideLoading();
+                $(".alert").text("保存任务失败，等会请重试").show();
+
+                $(".btn-save").attr('disabled', false);
+            }
+        });
+    })
+});
+</script>

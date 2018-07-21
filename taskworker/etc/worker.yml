@@ -1,0 +1,16 @@
+storage:
+    hosts: 127.0.0.1
+    dbname: jobscheduletask
+    user: root
+    password: 123456
+    port: 3306
+apiserver:
+    bind: :8985
+cron:
+  poolsize: 10
+fileserver:
+    hosts: 127.0.0.1
+    port: 8988
+workerinfo:
+	identification: 1
+...

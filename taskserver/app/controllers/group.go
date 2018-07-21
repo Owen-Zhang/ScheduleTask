@@ -1,0 +1,89 @@
+package controllers
+
+import (
+	"strconv"
+	"github.com/astaxie/beego"
+	"strings"
+	"ScheduleTask/taskserver/app/libs"
+	"ScheduleTask/model"
+)
+
+type GroupController struct {
+	BaseController
+}
+
+func (this *GroupController) List() {
+	page, _ := this.GetInt("page")
+	if page < 1 {
+		page = 1
+	}
+
+	list, count := dataaccess.TaskGroupGetList(page, this.pageSize)
+
+	this.Data["pageTitle"] = "分组列表"
+	this.Data["list"] = list
+	this.Data["pageBar"] = libs.NewPager(page, int(count), this.pageSize, beego.URLFor("GroupController.List"), true).ToString()
+	this.display()
+}
+
+func (this *GroupController) Add() {
+	if this.isPost() {
+		group := new(model.TaskGroup)
+		group.GroupName = strings.TrimSpace(this.GetString("group_name"))
+		group.UserId = this.userId
+		group.Description = strings.TrimSpace(this.GetString("description"))
+
+		err := dataaccess.TaskGroupAdd(group)
+		if err != nil {
+			this.ajaxMsg(err.Error(), MSG_ERR)
+		}
+		this.ajaxMsg("", MSG_OK)
+	}
+
+	this.Data["pageTitle"] = "添加分组"
+	this.display()
+}
+
+func (this *GroupController) Edit() {
+	id, _ := this.GetInt("id")
+
+	group, err := dataaccess.TaskGroupGetById(id)
+	if err != nil {
+		this.showMsg(err.Error())
+	}
+
+	if this.isPost() {
+		group.GroupName = strings.TrimSpace(this.GetString("group_name"))
+		group.Description = strings.TrimSpace(this.GetString("description"))
+		err := dataaccess.UpdateGroup(group)
+		if err != nil {
+			this.ajaxMsg(err.Error(), MSG_ERR)
+		}
+		this.ajaxMsg("", MSG_OK)
+	}
+
+	this.Data["pageTitle"] = "编辑分组"
+	this.Data["group"] = group
+	this.display()
+}
+
+func (this *GroupController) Batch() {
+	action := this.GetString("action")
+	ids := this.GetStrings("ids")
+	if len(ids) < 1 {
+		this.ajaxMsg("请选择要操作的项目", MSG_ERR)
+	}
+
+	for _, v := range ids {
+		id, _ := strconv.Atoi(v)
+		if id < 1 {
+			continue
+		}
+		switch action {
+		case "delete":
+			dataaccess.TaskGroupDelById(id)
+		}
+	}
+
+	this.ajaxMsg("", MSG_OK)
+}

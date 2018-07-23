@@ -5,15 +5,11 @@
 *.dylib
 pkg
 bin
-gopkg.in
-github.com
 
 # Test binary, build with `go test -c`
 *.test
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
-
-vendor
 
  .idea/

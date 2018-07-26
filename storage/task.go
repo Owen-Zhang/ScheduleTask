@@ -36,7 +36,7 @@ func (this *DataStorage) GetTaskById(idinput int) (*model.TaskExend, error) {
 			TaskType		: task_type,
 			Name			: task_name,
 			CronSpec		: cron_spec,
-			RunFilefolder	: run_file_folder,
+			RunFileFolder	: run_file_folder,
 			OldZipFile		: old_zip_file,
 			TaskApiUrl      : apiurl,
 			TaskApiMethod   : apimethod,
@@ -80,7 +80,7 @@ func (this *DataStorage) UpdateFrontTask(task *model.TaskExend) error {
 				version = ?, zip_file_path = ?, run_file_folder = ?, worker_id = ?  where id = ?`,
 		task.GroupId, task.Name, task.TaskType, task.Description, task.CronSpec,
 		task.OldZipFile, task.Concurrent, task.TaskApiUrl, task.TaskApiMethod, task.ApiHeader, task.Command, task.Notify, task.NotifyEmail, task.TimeOut,
-		task.Version, task.ZipFilePath, task.RunFilefolder, task.WorkerId, task.Id); err != nil {
+		task.Version, task.ZipFilePath, task.RunFileFolder, task.WorkerId, task.Id); err != nil {
 			return err
 	}
 	return nil
@@ -93,7 +93,7 @@ func (this *DataStorage) TaskAdd(task *model.TaskExend) (error) {
 								old_zip_file, concurrent, apiurl, apimethod, api_header, command, status, notify, notify_email, timeout, execute_times,
 							    prev_time, create_time, version, deleted, zip_file_path, worker_id)
 				VALUES(?,?,?,?,?,?,?,  ?,?,?,?,?,?,0,?,?,?,0,  ?,?,?,0,?,?)`,
-		task.UserId, task.GroupId, task.Name, task.TaskType, task.Description, task.CronSpec, task.RunFilefolder,
+		task.UserId, task.GroupId, task.Name, task.TaskType, task.Description, task.CronSpec, task.RunFileFolder,
 		task.OldZipFile, task.Concurrent, task.TaskApiUrl, task.TaskApiMethod, task.ApiHeader, task.Command, task.Notify, task.NotifyEmail, task.TimeOut,
 		task.PrevTime,task.CreateTime,task.Version, task.ZipFilePath, task.WorkerId); err != nil {
 			return err
@@ -149,7 +149,7 @@ func (this *DataStorage) TaskGetList(page, pageSize, status, groupid, workerid i
 				TaskType	 : task_type,
 				Name		 : task_name,
 				CronSpec	 : cron_spec,
-				RunFilefolder: run_file_folder,
+				RunFileFolder: run_file_folder,
 				OldZipFile	 : old_zip_file,
 				Command		 : command,
 				Notify		 : notify,

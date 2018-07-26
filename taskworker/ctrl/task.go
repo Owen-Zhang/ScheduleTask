@@ -34,7 +34,7 @@ func (this *Controller) start(request *Action) {
 
 	if task.TaskType == 1 {
 		//生成文件夹(根文件夹,里面放有config文件和run文件夹)，run 放上传文件的解压内容
-		taskfolder := strings.TrimSpace(task.RunFilefolder)
+		taskfolder := strings.TrimSpace(task.RunFileFolder)
 		datapath := fmt.Sprintf("%s/%s", model.WorkerRunDir, taskfolder)
 
 		//1: 检查上传文件是否有更新,如果没有更新就不用下载,没有配制文件也表示有更新
@@ -127,7 +127,7 @@ func (this *Controller) delete(id int) {
 
 //更新配制文件
 func (this *Controller) updateConfig(task * model.TaskExend) error {
-	datapath := fmt.Sprintf("%s/%s", model.WorkerRunDir, task.RunFilefolder)
+	datapath := fmt.Sprintf("%s/%s", model.WorkerRunDir, task.RunFileFolder)
 	if !system.FileExist(datapath) {
 			//数据文件夹没有，需要创建相关的文件夹
 			if err := os.MkdirAll(datapath, 0777); err != nil {
@@ -186,7 +186,7 @@ func (this *Controller) generateShell(task * model.TaskExend) error {
 			exit 0`
 	}
 
-	workDataFolder := fmt.Sprintf("%s/%s", model.WorkerRunDir, task.RunFilefolder)
+	workDataFolder := fmt.Sprintf("%s/%s", model.WorkerRunDir, task.RunFileFolder)
 	shellExt := model.LinuxShellExt
 	if model.Common.SystemName == model.SystemWindows {
 		shellExt = model.WindowsShellExt
@@ -204,7 +204,7 @@ func (this *Controller) generateShell(task * model.TaskExend) error {
 
 //下载文件，更新文件夹中的内容
 func (this *Controller) updateFileInfo(task *model.TaskExend) error {
-	datapath := fmt.Sprintf("%s/%s", model.WorkerRunDir, task.RunFilefolder)
+	datapath := fmt.Sprintf("%s/%s", model.WorkerRunDir, task.RunFileFolder)
 	tempzipfilefolder := fmt.Sprintf("%s/TempFile", datapath)
 	runfilefolder := fmt.Sprintf("%s/%s", datapath, model.WorkerFileRunDir)
 	

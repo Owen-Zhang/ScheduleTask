@@ -249,8 +249,8 @@ func (this *TaskController) SaveTask() {
 			resultData.Msg = fmt.Sprintf("%s/%s is not exists", model.ServerTempFileFolder, runFileName)
 			this.jsonResult(resultData)
 		}
-		if task.RunFilefolder == "" {
-			task.RunFilefolder = system.GetUuid()
+		if task.RunFileFolder == "" {
+			task.RunFileFolder = system.GetUuid()
 		}
 	}
 

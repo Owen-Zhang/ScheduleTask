@@ -13,7 +13,7 @@ type Task struct {
 	System          string        //运行在什么平台(windows, linux)
 	Name        	string        //任务名称
 	CronSpec   		string     	  //cron表达式
-	RunFilefolder   string    	  //任务的文件夹（代码放的文件夹名）
+	RunFileFolder   string    	  //任务的文件夹（代码放的文件夹名）
 	OldZipFile    	string        //原来的zip文件
 	Command     	string        //任务的命令如Init.exe xxx
 	TaskApiUrl      string        //API地址，如有端口号需要加上端口
@@ -35,7 +35,6 @@ type TaskExend struct {
 	UserId       int     //用户编号
 	GroupId      int     //组
 	Description  string  //描述
-	//RunFileName  string  //运行的文件
 	Status       int     //状态
 	ExecuteTimes int     //运行时间
 	PrevTime     int64   //上次运行的开始时间

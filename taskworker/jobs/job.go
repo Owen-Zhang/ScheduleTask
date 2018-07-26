@@ -51,7 +51,7 @@ func newCommandJob(task *model.Task) *Job {
 			if model.Common.SystemName == model.SystemWindows {
 				shellExt = model.WindowsShellExt
 			}
-			runShell := fmt.Sprintf("%s/%s/%s.%s", model.WorkerRunDir, task.RunFilefolder, model.WorkerFileRunDir, shellExt)
+			runShell := fmt.Sprintf("%s/%s/%s.%s", model.WorkerRunDir, task.RunFileFolder, model.WorkerFileRunDir, shellExt)
 
 			var cmd *exec.Cmd
 			if model.Common.SystemName == model.SystemLinux {

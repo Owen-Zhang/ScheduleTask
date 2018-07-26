@@ -8,6 +8,7 @@ import (
 	"ScheduleTask/taskworker/jobs"
 	"ScheduleTask/storage"
 	"errors"
+	"ScheduleTask/taskworker/global"
 )
 
 type JobWork struct {
@@ -50,9 +51,12 @@ func NewWorker() (*JobWork, error) {
 		Storage:    dataaccess,
 		Api:        apiserver,
 	}
-	
+
 	//加载本地的任务到任务队列中
 	job.Controller.AddAutoRunSelfTask(workerinfo.Identification)
+
+	/*worker的相关信息*/
+	global.WorkerInformation = workerinfo;
 	
 	return job, nil
 }

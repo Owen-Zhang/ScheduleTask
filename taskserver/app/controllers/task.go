@@ -24,9 +24,6 @@ type TaskController struct {
 	BaseController
 }
 
-const tempFileFolder  = "TempFile"
-//const workerUrl = "http://%s:%d/worker/%s"
-
 // 任务列表
 func (this *TaskController) List() {
 	page, _ := this.GetInt("page")
@@ -92,21 +89,22 @@ func (this *TaskController) UploadRunFile() {
 		this.jsonResult(uploadResult)
 
 	} else {
-		fileTool := &libs.FileTool{Url: h.Filename}
 		exts := []string{"zip"}
-		if !fileTool.CheckFileExt(exts) {
+		if !system.CheckFileExt(exts, h.Filename) {
 			uploadResult.Msg = "请上传正确的文件类型"
 			this.jsonResult(uploadResult)
 		}
 
-		uuidFileName := fileTool.CreateUuidFile()
+		uuidFileName := system.CreateUuidFile(h.Filename)
 		if uuidFileName == "" {
 			uploadResult.Msg = "文件保存出错，请重新选择文件"
 			this.jsonResult(uploadResult)
 		}
 
-		filePath := tempFileFolder + "/" + uuidFileName
-		os.Mkdir(tempFileFolder, 0777)
+		filePath := model.ServerTempFileFolder + "/" + uuidFileName
+		if !system.IsExist(model.ServerTempFileFolder) {
+			os.Mkdir(model.ServerTempFileFolder, 0777)
+		}
 
 		if err := this.SaveToFile("files[]", filePath); err != nil {
 			uploadResult.Msg = err.Error()
@@ -115,7 +113,7 @@ func (this *TaskController) UploadRunFile() {
 
 		uploadResult.IsSuccess = true
 		uploadResult.Data = &response.UploadFileInfo{
-			OldFileName: fileTool.Url,
+			OldFileName: h.Filename,
 			NewFileName: uuidFileName,
 		}
 		this.jsonResult(uploadResult)
@@ -179,7 +177,8 @@ func (this *TaskController) SaveTask() {
 	if isNew {
 		task.TaskType, _ = this.GetInt("task_type")
 	}
-		
+
+	task.System = strings.TrimSpace(this.GetString("system"))
 	task.Name = strings.TrimSpace(this.GetString("task_name"))
 	task.Description = strings.TrimSpace(this.GetString("description"))
 	task.GroupId, _ = this.GetInt("group_id")
@@ -237,7 +236,7 @@ func (this *TaskController) SaveTask() {
 		/*runFileName: 记录处理过的文件名(为了保存文件名不重复，重新取文件名); OldZipFile: 用户上传的文件名*/
 		runFileName := strings.TrimSpace(this.GetString("runfilename"))
 
-		filepath := tempFileFolder + "/" +  runFileName
+		filepath := model.ServerTempFileFolder + "/" +  runFileName
 		//上传文件到文件服务器
 		if system.IsExist(filepath) {
 			filename, err := this.uploadfile(filepath)
@@ -247,7 +246,7 @@ func (this *TaskController) SaveTask() {
 			}
 			task.ZipFilePath = filename
 		} else {
-			resultData.Msg = fmt.Sprintf("TempFile/%s is not exists", runFileName)
+			resultData.Msg = fmt.Sprintf("%s/%s is not exists", model.ServerTempFileFolder, runFileName)
 			this.jsonResult(resultData)
 		}
 		if task.RunFilefolder == "" {

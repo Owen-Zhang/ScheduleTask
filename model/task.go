@@ -10,6 +10,7 @@ const (
 type Task struct {
 	Id          	int           //任务的主键
 	TaskType    	int           //任务类型 0命令型，1运行本地文件(上传文件),2调用外部接口
+	System          string        //运行在什么平台(windows, linux)
 	Name        	string        //任务名称
 	CronSpec   		string     	  //cron表达式
 	RunFilefolder   string    	  //任务的文件夹（代码放的文件夹名）
@@ -18,6 +19,7 @@ type Task struct {
 	TaskApiUrl      string        //API地址，如有端口号需要加上端口
 	TaskApiMethod   string        //提交方式(POST, GET)
 	ApiHeader       string        //提交的header
+	ApiBody         string        //body内容
 	TimeOut     	int           //任务执行的超时时间
 	Concurrent  	int   		  //是否允许在再一次没有运行完成的情况运行下一次
 	Notify      	int           //是否需要通知

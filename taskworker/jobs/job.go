@@ -10,6 +10,11 @@ import (
 	"github.com/axgle/mahonia"
 	"github.com/imroc/req"
 	"io/ioutil"
+	"path/filepath"
+	"os"
+	"errors"
+	"net/http"
+	"strings"
 )
 
 type Job struct {
@@ -36,53 +41,114 @@ func newCommandJob(task *model.Task) *Job {
 		name: task.Name,
 	}
 
-	//处理文件和命令型
-	if task.TaskType == 0 || task.TaskType == 1 {
-		job.runFunc = func(timeout time.Duration) (string, string, error, bool) {
+	//TaskType 0:Shell脚本, 1: 文件, 2:API
+	job.runFunc = func(timeout time.Duration) (string, string, error, bool) {
+		if task.TaskType == 1 {
 			bufOut := new(bytes.Buffer)
 			bufErr := new(bytes.Buffer)
 
-			cmd := exec.Command("cmd.exe", "/c", task.Command)
+			shellExt := model.LinuxShellExt
+			if model.Common.SystemName == model.SystemWindows {
+				shellExt = model.WindowsShellExt
+			}
+			runShell := fmt.Sprintf("%s/%s/%s.%s", model.WorkerRunDir, task.RunFilefolder, model.WorkerFileRunDir, shellExt)
+
+			var cmd *exec.Cmd
+			if model.Common.SystemName == model.SystemLinux {
+				cmd = exec.Command("/bin/bash", "-c", runShell)
+			} else {
+				//windos下面不知怎么的，运行bat文件要绝对路径, 但bat文件中cd又可以写相对路径
+				dir,_ := filepath.Abs(filepath.Dir(os.Args[0]))
+				cmd = exec.Command("cmd.exe", "/c", fmt.Sprintf("%s/%s", dir,runShell))
+			}
+
 			cmd.Stdout = bufOut
 			cmd.Stderr = bufErr
-			cmd.Start() //另外开一个cmd程序去运行任务
-
+			cmd.Start()
 			err, isTimeout := runCmdWithTimeOut(cmd, timeout)
+
 			encoder := mahonia.NewDecoder("gbk")
-
 			return encoder.ConvertString(bufOut.String()), encoder.ConvertString(bufErr.String()), err, isTimeout
-		}
-	} else { //处理接口类型
-		job.runFunc = func(duration time.Duration) (string, string, error, bool) {
-			if task.TaskApiMethod == "POST" {
-				header := req.Header{
-					"Content-Type": "application/json",
-				}
-				responsestr := ""
-				res, err := req.Post(task.TaskApiUrl, header, req.BodyJSON(task.Command))
-				if err == nil {
-					bodystr, _ := ioutil.ReadAll(res.Response().Body)
-					defer res.Response().Body.Close()
 
-					responsestr = string(bodystr)
+		} else if task.TaskType == 2 {
+			header := make(http.Header)
+			if task.ApiHeader != "" && strings.TrimSpace(task.ApiHeader) != "" {
+				headers := strings.Split(task.ApiHeader, "\n")
+				for _,val := range headers {
+					keyval := strings.Split(val, "=")
+					if len(keyval) > 0 {
+						v := strings.TrimSpace(keyval[0])
+						v1 := strings.TrimSpace(keyval[1])
+						if v != "" && v1 != "" {
+							header.Set(v, v1)
+						} else {
+							continue
+						}
+					}
 				}
-				encoder := mahonia.NewDecoder("gbk")
-				return encoder.ConvertString(responsestr), "", err, false
-			} else {
-				responsestr := ""
-				res, err := req.Get(task.TaskApiUrl)
-				if err == nil {
-					bodystr, _ := ioutil.ReadAll(res.Response().Body)
-					defer res.Response().Body.Close()
-
-					responsestr = string(bodystr)
-				}
-				encoder := mahonia.NewDecoder("gbk")
-				return encoder.ConvertString(responsestr), "", err, false
 			}
+			responsestr := ""
+			var err error
+			var res *req.Resp
+
+			req.SetTimeout(time.Second * time.Duration(task.TimeOut))
+			if task.TaskApiMethod == "POST" {
+				if task.ApiBody != "" {
+					contenttype := header.Get("Content-Type")
+					if contenttype == "" {
+						header.Set("Content-Type","application/x-www-form-urlencoded")
+					}
+					if contenttype == "application/json" {
+						res, err = req.Post(task.TaskApiUrl, header, req.BodyJSON(task.ApiBody))
+					} else if contenttype == "application/xml" {
+						res, err = req.Post(task.TaskApiUrl, header, req.BodyXML(task.ApiBody))
+					} else  {
+						res, err = req.Post(task.TaskApiUrl, header, task.ApiBody)
+					}
+				} else {
+					res, err = req.Post(task.TaskApiUrl, header)
+				}
+
+			} else {
+				res, err = req.Get(task.TaskApiUrl, header)
+			}
+
+			if err == nil {
+				bodystr, _ := ioutil.ReadAll(res.Response().Body)
+				defer res.Response().Body.Close()
+
+				responsestr = string(bodystr)
+
+				if res.Response().StatusCode != 200 {
+					return responsestr, "", errors.New(fmt.Sprintf("返回的状态码为：%d", res.Response().StatusCode)), false
+				}
+
+				return responsestr, "", nil, false
+			}
+			return "", "", err, false
+
+		} else if task.TaskType == 0 {
+			bufOut := new(bytes.Buffer)
+			bufErr := new(bytes.Buffer)
+
+			var cmd *exec.Cmd
+			if model.Common.SystemName == model.SystemLinux {
+				cmd = exec.Command("/bin/bash", "-c", task.Command)
+			} else {
+				cmd = exec.Command("cmd.exe", "/c", task.Command)
+			}
+
+			cmd.Stdout = bufOut
+			cmd.Stderr = bufErr
+			cmd.Start()
+			err, isTimeout := runCmdWithTimeOut(cmd, timeout)
+
+			encoder := mahonia.NewDecoder("gbk")
+			return encoder.ConvertString(bufOut.String()), encoder.ConvertString(bufErr.String()), err, isTimeout
+		} else {
+			return "", "", nil, false
 		}
 	}
-
 	return job
 }
 

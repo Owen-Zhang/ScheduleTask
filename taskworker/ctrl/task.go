@@ -13,9 +13,9 @@ import (
 	"encoding/json"
 	"path"
 	"sync"
+	"errors"
+	"ScheduleTask/taskworker/global"
 )
-
-const DataFolder = "Data/%s"
 
 //运行任务(包括新增和重新启动)
 func (this *Controller) start(request *Action) {
@@ -26,7 +26,7 @@ func (this *Controller) start(request *Action) {
 		return
 	}
 
-	if task == nil || task.Status != 1 {
+	if task == nil || task.Status != 1 || task.WorkerId != global.WorkerInformation.Identification {
 		return
 	}
 
@@ -35,7 +35,7 @@ func (this *Controller) start(request *Action) {
 	if task.TaskType == 1 {
 		//生成文件夹(根文件夹,里面放有config文件和run文件夹)，run 放上传文件的解压内容
 		taskfolder := strings.TrimSpace(task.RunFilefolder)
-		datapath := fmt.Sprintf(DataFolder, taskfolder)
+		datapath := fmt.Sprintf("%s/%s", model.WorkerRunDir, taskfolder)
 
 		//1: 检查上传文件是否有更新,如果没有更新就不用下载,没有配制文件也表示有更新
 		configfile := fmt.Sprintf(`%s/config.txt`, datapath)
@@ -127,7 +127,7 @@ func (this *Controller) delete(id int) {
 
 //更新配制文件
 func (this *Controller) updateConfig(task * model.TaskExend) error {
-	datapath := fmt.Sprintf(DataFolder, task.RunFilefolder)
+	datapath := fmt.Sprintf("%s/%s", model.WorkerRunDir, task.RunFilefolder)
 	if !system.FileExist(datapath) {
 			//数据文件夹没有，需要创建相关的文件夹
 			if err := os.MkdirAll(datapath, 0777); err != nil {
@@ -149,22 +149,64 @@ func (this *Controller) updateConfig(task * model.TaskExend) error {
 	configfile := fmt.Sprintf("%s/config.txt", datapath)
 	m := new(sync.Mutex)
 	m.Lock()
+	defer m.Unlock()
 	f, err := os.OpenFile(configfile, os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.ModePerm)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
 	f.WriteString(string(configbytes))
-	defer m.Unlock()
-	
+
+	if task.TaskType == 1 {
+		/*运行脚本文件*/
+		this.generateShell(task)
+	}
+	return nil
+}
+
+func (this *Controller) generateShell(task * model.TaskExend) error {
+	//生成脚本文件
+	shellContent :=
+		`#!/bin/bash
+		cd %s
+		%s
+		errorcode=$?
+        if [ ${errorcode} -ne 0 ]; then
+            exit ${errorcode}
+        fi
+        exit 0`
+	if model.Common.SystemName == model.SystemWindows {
+		shellContent =
+			`@echo off
+			cd %s
+			%s
+			if NOT %%errorlevel%% == 0 (
+				exit %%errorlevel%%
+			)
+			exit 0`
+	}
+
+	workDataFolder := fmt.Sprintf("%s/%s", model.WorkerRunDir, task.RunFilefolder)
+	shellExt := model.LinuxShellExt
+	if model.Common.SystemName == model.SystemWindows {
+		shellExt = model.WindowsShellExt
+	}
+	runShell := fmt.Sprintf("%s/%s.%s", workDataFolder, "start", shellExt)
+	fileShell, errShell := os.OpenFile(runShell, os.O_RDWR|os.O_CREATE, 0766)
+	if errShell != nil {
+		return errors.New("创建shell文件时失败")
+	}
+	defer fileShell.Close()
+
+	fileShell.WriteString(fmt.Sprintf(shellContent, fmt.Sprintf("%s/%s", workDataFolder, model.WorkerFileRunDir), task.Command))
 	return nil
 }
 
 //下载文件，更新文件夹中的内容
 func (this *Controller) updateFileInfo(task *model.TaskExend) error {
-	datapath := fmt.Sprintf(DataFolder, task.RunFilefolder)
+	datapath := fmt.Sprintf("%s/%s", model.WorkerRunDir, task.RunFilefolder)
 	tempzipfilefolder := fmt.Sprintf("%s/TempFile", datapath)
-	runfilefolder := fmt.Sprintf("%s/Run", datapath)
+	runfilefolder := fmt.Sprintf("%s/%s", datapath, model.WorkerFileRunDir)
 	
 	if !system.FileExist(tempzipfilefolder) {
 		if err := os.MkdirAll(tempzipfilefolder, 0777); err != nil {

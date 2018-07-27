@@ -434,38 +434,43 @@ func (this *TaskController) Start() {
 		result.Msg = err.Error()
 		this.jsonResult(result)
 	}
-	if task != nil {
+
+	/*如果任务没有分配机子，就动态的去分配一个, 后面会做一个机器的运行的状态表，去确定分配给谁*/
+	/*暂时去数据库中查询一个满足条件的worker*/
+	if task.WorkerId <= 0 {
 		worker, err := dataaccess.GetOneWorker("", task.WorkerId)
 		if err != nil {
 			result.Msg = err.Error()
 			this.jsonResult(result)
 		}
-		
-		if worker != nil {
-			posturl := fmt.Sprintf(model.WorkerUrl, worker.Url, worker.Port, "starttask")
-			fmt.Println(posturl)
+	} else {
+		/*检查选择的机器是否还在运行状态*/
 
-			updateerr := dataaccess.TaskUpdateStatus(id, 1)
-			if updateerr != nil {
-				result.Msg = updateerr.Error()
-				this.jsonResult(result)
-			}
-			
-			res, err :=
+	}
+
+	if worker != nil {
+		posturl := fmt.Sprintf(model.WorkerUrl, worker.Url, worker.Port, "starttask")
+
+		updateerr := dataaccess.TaskUpdateStatus(id, 1)
+		if updateerr != nil {
+			result.Msg = updateerr.Error()
+			this.jsonResult(result)
+		}
+
+		res, err :=
 			req.Post(posturl, req.Param{"id" : id})
-			
-			if err != nil || res.Response().StatusCode != http.StatusOK {
-				if err == nil {
-					result.Msg = "[Start]通知客戶端失敗"
-				} else {
-					result.Msg = err.Error()
-				}
 
-				//将状态改回去
-				dataaccess.TaskUpdateStatus(id, 0)
-
-				this.jsonResult(result)
+		if err != nil || res.Response().StatusCode != http.StatusOK {
+			if err == nil {
+				result.Msg = "[Start]通知客戶端失敗"
+			} else {
+				result.Msg = err.Error()
 			}
+
+			//将状态改回去
+			dataaccess.TaskUpdateStatus(id, 0)
+
+			this.jsonResult(result)
 		}
 	}
 

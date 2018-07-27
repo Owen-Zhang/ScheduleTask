@@ -17,7 +17,20 @@
 		
 		<hr />
 		<h4>任务命令</h4>
-		<pre class="pre-scrollable">{{.task.Command}}</pre>
+		
+		{{if eq .task.TaskType 2}}
+			<pre>地址：{{.task.TaskApiUrl}}</pre>
+			<pre>调用方法：{{.task.TaskApiMethod}}</pre>
+			<pre>调用头信息：<br/>{{.task.ApiHeader}}</pre>
+			{{if eq .task.TaskApiMethod "POST"}}
+			<pre>调用Body信息：<br/>{{.task.ApiBody}}</pre>
+			{{end}}
+		{{else if eq .task.TaskType 1}}
+			<pre>命令脚本：{{.task.Command}}</pre>
+			<pre>程序文件：{{.task.OldZipFile}}</pre>
+		{{else}}
+			<pre>命令脚本：{{.task.Command}}</pre>
+		{{end}}
 		<hr />
 		
 		<h4>执行输出</h4>

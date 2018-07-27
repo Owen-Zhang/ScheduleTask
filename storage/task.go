@@ -9,7 +9,7 @@ import (
 //根据id获取相关的任务信息
 func (this *DataStorage) GetTaskById(idinput int) (*model.TaskExend, error) {
 	sqltext := `SELECT id, user_id, group_id, task_name, task_type, description, cron_spec, run_file_folder,
-			old_zip_file, concurrent, apiurl, apimethod, api_header, command, status, notify, notify_email, timeout, execute_times,
+			old_zip_file, concurrent, task_api_url, task_api_method, api_header, command, status, notify, notify_email, time_out, execute_times,
 			prev_time, create_time, version, zip_file_path, worker_id from task where deleted = 0 and id=?;`
 
 	row := this.db.QueryRow(sqltext, idinput)
@@ -76,7 +76,7 @@ func (this *DataStorage) UpdateBackTask (prevtime int64, id int) error {
 func (this *DataStorage) UpdateFrontTask(task *model.TaskExend) error {
 	if _, err := this.db.Exec(
 		`update task set group_id = ?, task_name = ?, task_type = ?, description = ?, cron_spec = ?,
-				old_zip_file = ?, concurrent = ?, apiurl = ?, apimethod = ?, api_header = ?, command = ?, notify = ?, notify_email = ?, timeout = ?,
+				old_zip_file = ?, concurrent = ?, task_api_url = ?, task_api_method = ?, api_header = ?, command = ?, notify = ?, notify_email = ?, time_out = ?,
 				version = ?, zip_file_path = ?, run_file_folder = ?, worker_id = ?  where id = ?`,
 		task.GroupId, task.Name, task.TaskType, task.Description, task.CronSpec,
 		task.OldZipFile, task.Concurrent, task.TaskApiUrl, task.TaskApiMethod, task.ApiHeader, task.Command, task.Notify, task.NotifyEmail, task.TimeOut,
@@ -89,12 +89,12 @@ func (this *DataStorage) UpdateFrontTask(task *model.TaskExend) error {
 func (this *DataStorage) TaskAdd(task *model.TaskExend) (error) {
 	fmt.Println(*task)
 	if _, err := this.db.Exec(
-		`INSERT into task(user_id, group_id, task_name, task_type, description, cron_spec, run_file_folder,
-								old_zip_file, concurrent, apiurl, apimethod, api_header, command, status, notify, notify_email, timeout, execute_times,
+		`INSERT into task(user_id, group_id, system, task_name, task_type, description, cron_spec, run_file_folder,
+								old_zip_file, concurrent, task_api_url, task_api_method, api_header, api_body, command, status, notify, notify_email, time_out, execute_times,
 							    prev_time, create_time, version, deleted, zip_file_path, worker_id)
-				VALUES(?,?,?,?,?,?,?,  ?,?,?,?,?,?,0,?,?,?,0,  ?,?,?,0,?,?)`,
-		task.UserId, task.GroupId, task.Name, task.TaskType, task.Description, task.CronSpec, task.RunFileFolder,
-		task.OldZipFile, task.Concurrent, task.TaskApiUrl, task.TaskApiMethod, task.ApiHeader, task.Command, task.Notify, task.NotifyEmail, task.TimeOut,
+				VALUES(?,?,?,?,?,?,?,?,  ?,?,?,?,?,?,?,0,?,?,?,0,  ?,?,?,0,?,?)`,
+		task.UserId, task.GroupId, task.System, task.Name, task.TaskType, task.Description, task.CronSpec, task.RunFileFolder,
+		task.OldZipFile, task.Concurrent, task.TaskApiUrl, task.TaskApiMethod, task.ApiHeader, task.ApiBody, task.Command, task.Notify, task.NotifyEmail, task.TimeOut,
 		task.PrevTime,task.CreateTime,task.Version, task.ZipFilePath, task.WorkerId); err != nil {
 			return err
 	}
@@ -112,8 +112,8 @@ func (this *DataStorage) TaskGetList(page, pageSize, status, groupid, workerid i
 
 	rows, err := this.db.Query(
 		`SELECT
-			id, user_id, group_id, worker_id, task_name, task_type, description, cron_spec, run_file_folder,
-			old_zip_file, concurrent, command, status, notify, notify_email, timeout, execute_times,
+			id, user_id, group_id, system, worker_id, task_name, task_type, description, cron_spec, run_file_folder,
+			old_zip_file, concurrent, command, status, notify, notify_email, time_out, execute_times,
 			prev_time, create_time, version, zip_file_path
 		from task
 		where (? =-1 or ? = status) AND
@@ -132,11 +132,11 @@ func (this *DataStorage) TaskGetList(page, pageSize, status, groupid, workerid i
 	var result []*model.TaskExend
 	for rows.Next() {
 
-		var task_name,description, cron_spec, run_file_folder, old_zip_file, command, notify_email, zip_file_path string
+		var system,task_name,description, cron_spec, run_file_folder, old_zip_file, command, notify_email, zip_file_path string
 		var id, user_id, group_id, worker_id, task_type, concurrent, status, notify, timeout, execute_times, version int
 		var create_time, prev_time int64
 
-		if er := rows.Scan(&id, &user_id, &group_id, &worker_id, &task_name, &task_type, &description, &cron_spec, &run_file_folder,
+		if er := rows.Scan(&id, &user_id, &group_id, &system, &worker_id, &task_name, &task_type, &description, &cron_spec, &run_file_folder,
 			&old_zip_file, &concurrent, &command, &status, &notify, &notify_email, &timeout, &execute_times,
 			&prev_time, &create_time, &version, &zip_file_path); er != nil {
 
@@ -146,6 +146,7 @@ func (this *DataStorage) TaskGetList(page, pageSize, status, groupid, workerid i
 		result = append(result, &model.TaskExend{
 			Task:model.Task {
 				Id 			 : id,
+				System       : system,
 				TaskType	 : task_type,
 				Name		 : task_name,
 				CronSpec	 : cron_spec,

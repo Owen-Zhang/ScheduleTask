@@ -94,9 +94,9 @@
 	*zoom:1;
 }
 .notegreen {
+	margin-left: 4px;
 	color : green;
 }
-
 </style>
 <div class="row">
 <div class="span12">
@@ -117,8 +117,7 @@
 					<label class="control-label" for="task_name">任务名称</label>
 					<div class="controls">
 						<input type="text" value="{{.task.Name}}" class="span6" id="task_name">
-					</div>		
-					<div class="controls icon-"></div>		
+					</div>				
 				</div>
 								
 				<div class="control-group">											
@@ -127,6 +126,16 @@
 						<textarea class="span6" id="description" rows="3">{{.task.Description}}</textarea>
 					</div>
 				</div>
+
+                <div class="control-group">
+                    <label class="control-label" for="system">分组</label>
+                    <div class="controls">
+                        <select id="system">
+                            <option value="windows">windows</option>
+                            <option value="linux">linux</option>
+                        </select>
+                    </div>
+                </div>
 				
 				<div class="control-group">											
 					<label class="control-label" for="group_id">分组</label>
@@ -138,38 +147,16 @@
 						</select>
 					</div>				
 				</div>
-
-                <div class="control-group">
-                    <label class="control-label" for="group_worker">worker</label>
-                    <div class="controls">
-                        <select id="group_worker">
-						{{range $k, $v := .workers}}
-                            <option value="{{$v.Id}}">{{$v.Name}}</option>
-						{{end}}
-                        </select>
-                    </div>
-                </div>
-				
-				<div class="control-group">
-                    <label class="control-label" for="task_type">任务类型</label>
-                    <div class="controls">
-                        <select id="task_type">
-                            <option value="0">命令</option>
-							<option value="1">文件</option>
-							<option value="2">接口</option>
-                        </select>
-                    </div>
-                </div>
 				
 				<div class="control-group">											
-					<label class="control-label">是否只允许一个实例</label>
+					<label class="control-label">是否单实例</label>
 					<div class="controls concurrent">
 						<label class="radio inline ">
-							<input type="radio" value="0" name="yes"> 是
+							<input type="radio" value="0" name="yes" id="instanceyes" > 是
 						</label>
 						<label class="radio inline">
-							<input type="radio" value="1" name="no"> 否
-						</label> 
+							<input type="radio" value="1" name="yes" id="instanceno"> 否
+						</label>
 						<i class="icon-question-sign notegreen" title="设为“是”的话，如果该任务在上一个时间点还没执行完，则略过不执行"></i>
 					</div>
 				</div>
@@ -182,40 +169,59 @@
 					</div>
 				</div>
 				
-				<div class="control-group task_url_div">											
-					<label class="control-label" for="task_url">接口地址</label>
+				<div class="control-group">											
+					<label class="control-label" for="task_type">任务类型</label>
 					<div class="controls">
-						<input type="text" value="{{.task.TaskApiUrl}}" class="span6" id="task_url">
-						<i class="icon-question-sign notegreen" title="如：http://127.0.0.1:2000/abs"></i>
+						<select id="task_type">
+							<option value="0">Shell脚本</option>
+							<option value="1">文件</option>
+							<option value="2">接口</option>
+						</select>
 					</div>				
 				</div>
-
-                <div class="control-group">
-                    <label class="control-label" for="api_header">头信息(header)</label>
-                    <i class="icon-question-sign notegreen" title="请保持这样的格式:&#13;Content-Type=application/json&#13;456=sdfadsf"></i>
-                    <div class="controls">
-                        <textarea class="span6" id="api_header" rows="6">{{.task.ApiHeader}}</textarea>
-                    </div>
-                </div>
 				
-				<div class="control-group task_url_method_div">
-                    <label class="control-label" for="task_method">提交方式</label>
-                    <div class="controls">
-                        <select id="task_method">
-                            <option value="POST">POST</option>
-							<option value="GET">GET</option>
-                        </select>
-                    </div>
-                </div>
-
-				<div class="control-group command-div">											
-					<label class="control-label" for="command">脚本</label>
+				<div class="control-group" id="command_parent">											
+					<label class="control-label" for="command">命令脚本</label>
 					<div class="controls">
-						<textarea class="span6" id="command" rows="6">{{.task.Command}}</textarea>
+						<input type="text" class="span6" id="command" value="{{.task.Command}}">
+						<i class="icon-question-sign notegreen" title="java -jar demo.jar demoApplication.class"></i>
 					</div>
-				</div>											
-
-				<div class="control-group upload-div">
+				</div>
+				
+				<div class="control-group" id="api_header_parent">											
+					<label class="control-label" for="api_header">头信息(header)</label>
+					<i class="icon-question-sign notegreen" title="请保持这样的格式,不要有空格:&#13;Content-Type=application/json&#13;Content-Type=application/xml&#13;Content-Type=application/x-www-form-urlencoded&#13;456=sdfadsf"></i>
+					<div class="controls">
+						<textarea class="span6" id="api_header" rows="6">{{.task.ApiHeader}}</textarea>
+					</div>
+				</div>
+				
+				<div class="control-group" id="api_url_parent">											
+					<label class="control-label" for="api_url">调用地址</label>
+					<div class="controls">
+						<input type="text" value="{{.task.TaskApiUrl}}" class="span6" id="api_url">
+					</div>				
+				</div>
+				
+				<div class="control-group" id="api_method_parent">											
+					<label class="control-label" for="api_method">提交方式</label>
+					<div class="controls">
+						<select id="api_method">
+							<option value="GET">GET</option>
+							<option value="POST">POST</option>
+						</select>
+					</div>				
+				</div>
+				
+				<div class="control-group postbody_div">											
+					<label class="control-label" for="post_body">Body内容</label>
+					<i class="icon-question-sign notegreen" title="在header中没有设置相关的Content-Type数据格式就默认为application/x-www-form-urlencoded&#13;如果以form提交数据，请在header中设置，同时body内容为: aaa=111&dddd=546&sdd=243268"></i>
+					<div class="controls">
+						<textarea class="span6" id="post_body" rows="6">{{.task.ApiBody}}</textarea>
+					</div>
+				</div>
+				
+				<div class="control-group" id="file_parent">
 					<label style="line-height:40px" class="control-label">程序文件</label>
 					<div class="controls">
 						<div class="upload clearfix">
@@ -246,24 +252,22 @@
 					<label class="control-label">邮件通知</label>
 					<div class="controls notify">
 						<label class="radio inline">
-							<input type="radio" value="0" name="NotNotify"> 不通知
+							<input type="radio" value="0" name="notify" id="nevertnotify"> 不通知
 						</label>
 						<label class="radio inline">
-							<input type="radio" value="1" name="FaildNotify"> 执行失败时通知
-						</label>
-						<label class="radio inline">
-							<input type="radio" value="2" name="OverNotify"> 执行结束时通知
+							<input type="radio" value="1" name="notify" id="errornotify"> 失败时通知
 						</label>
 					</div>
 				</div>
 				
-				<div class="control-group notify_email hide">											
-					<label class="control-label" for="notify_email">通知邮件抄送人</label>
+				<div class="control-group notify_email_parent">											
+					<label class="control-label" for="notify_email">通知邮件地址</label>
 					<div class="controls">
-						<textarea class="span6" id="notify_email" rows="6"></textarea>
-						<p class="help-block">如果有多个地址请以分号 ; 隔开，如果不需要抄送给其他人请留空</p>
+						<input type="text" class="span6" id="notify_email" value="{{.task.NotifyEmail}}">
+						<i class="icon-question-sign notegreen" title="如果有多个地址请以分号 ; 隔开，如果不需要抄送给其他人请留空"></i>
 					</div>
 				</div>
+				
 				<br />
 				<div class="form-actions">
 					<button id="btn-save" type="submit" class="btn btn-primary">保 存</button>
@@ -284,45 +288,40 @@
 <script type="text/javascript">
 $(function () {
 	$("#group_id").val({{$.task.GroupId}});
-	$("#group_worker").val({{$.task.WorkerId}})
 	
-	var taskType = {{$.task.TaskType}}
-	$("#task_type").val(taskType)
-	if (taskType == 0){ //命令
-		$(".task_url_div, .task_url_method_div, .upload-div").hide();
-	} else if (taskType == 1) { //文件
-		$(".task_url_div, .task_url_method_div").hide();
-	} else { //接口
-		$(".upload-div").hide();
+	if ({{.task.Concurrent}} == undefined || {{.task.Concurrent}} == 0) {
+		$("#instanceyes").attr("checked", 'checked')
+	} else {
+		$("#instanceno").attr("checked", 'checked')
+	}	
+	
+	var taskId = {{.task.Id}}
+	if (taskId > 0) {
+		$("#task_type").attr("disabled", true)
+		$("#system").attr("disabled", true)
 	}
 	
-	if (taskType != 0) {
-		$("#task_type").attr('disabled', true);
+	if ({{.task.OldZipFile}} && {{.task.OldZipFile}} != "") {
+		$(".filestate").show().text({{.task.OldZipFile}});
+		$(".progress").show();  
+		$(".bar").css("width", 200);
 	}
 	
-	var typeName = 'no';
-	if ({{.task.Concurrent}} == undefined || {{.task.Concurrent}} == 0)
-		typeName = 'yes';			
-			
-	$("input:radio[name='" + typeName + "']").attr("checked",'checked');
-	$(".filestate").show().text({{$.task.OldZipFile}});
-	
-	var notifyName = 'NotNotify';
 	var notifyValue = {{.task.Notify}};
-	if (!notifyValue) //notifyValue == undefined || notifyValue == "" || notifyValue == 0
-		notifyName = 'NotNotify';	
-	else if (notifyValue == 1)		
-		notifyName = 'FaildNotify';	
-	else 
-		notifyName = 'OverNotify';		
-	$("input:radio[name='" + notifyName + "']").attr("checked",'checked');
-	
-	var isview = {{.status}};
-	if (isview == "view") {
-		$("#btn-save").hide();
+	if (notifyValue == undefined || notifyValue == 0) {
+		$("#nevertnotify").attr("checked",'checked')
+	} else if (notifyValue == 1) {
+		$("#errornotify").attr("checked",'checked')
+	}
+
+	$("#system").val({{.task.System}})
+	$("#task_type").val({{.task.TaskType}})	
+	$("#api_method").val({{.task.TaskApiMethod}})
+	if ($("#api_method").val() == "GET") {
+		$(".postbody_div").hide()
 	}
 	
-    //初始化上传组件信息
+	//初始化上传组件信息
     $("#uploadFile").fileupload({
         done: function (e, result) {
             if (!result.result.IsSuccess) {
@@ -345,7 +344,11 @@ $(function () {
 
         }
     });
-
+	
+	$("input[name='notify']").click(function () {
+		IsShowEmailInfo($(this).val())
+	});
+	
     //保存
     $("#btn-save").click(function () {
         $(".alert").hide();
@@ -358,22 +361,23 @@ $(function () {
             async: true,
             data: {
 				"id": {{.task.Id}},
-				"task_type": $("#task_type").val(),
+				"system": $("#system").val(),
                 "group_id": $("#group_id").val(),
-				"worker_id": $("#group_worker").val(),
                 "task_name": $("#task_name").val(),
                 "description": $("#description").val(),
                 "concurrent": $(".concurrent input:checked").val(),
                 "cron_spec": $("#cron_spec").val(),
-                "command": $("#command").val(),
-                "notify": $(".notify input:checked").val(),
+				"task_type": $("#task_type").val(),
+				"old_zip_file": $.trim($(".filestate").text()),
+				"new_temp_file": $("#uploadFile").attr("data-file") == undefined ? "" : $("#uploadFile").attr("data-file"),
+				"command": $("#command").val(),
+				"api_header": $("#api_header").val(),
+				"api_url": $("#api_url").val(),
+				"api_method": $("#api_method").val(),
+				"post_body": $("#post_body").val(),
                 "timeout": $("#timeout").val(),
-                "notify_email": $("#notify_email").val(),
-                "runfilename": $("#uploadFile").attr("data-file") == undefined ? "" : $("#uploadFile").attr("data-file"),
-				"oldzipfile": $.trim($(".filestate").text()),
-				"task_url":$.trim($("#task_url").val()),
-				"task_method": $("#task_method").val(),
-				"api_header": $("#api_header").val()
+				"notify": $(".notify input:checked").val(),
+				"notify_email": $("#notify_email").val()
 			},
             success: function (result) {
                 if (result.IsSuccess) {
@@ -395,77 +399,110 @@ $(function () {
 			}
 		});
     });
-
-	$("input[name='notify']").click(function () {
-		if ($(this).val() > 0) {
-			$('.notify_email').removeClass('hide');
-		} else {
-			$('.notify_email').addClass('hide');
-		}
-	});
 	
-	$("#task_type").change(function(){
-		var val = $(this).val()
-		if (val == 0){ //命令
-			$(".task_url_div, .task_url_method_div, .upload-div").hide();
-		} else if (val == 1) { //文件
-			$(".upload-div").show();
-			$(".task_url_div, .task_url_method_div").hide();
-		} else { //接口
-			$(".task_url_div, .task_url_method_div").show();
-			$(".upload-div").hide()
-		}
-	})
+	ShowDifferentContent();
+	DisableContent();
 	
-	$("#task_method").change(function(){
-		var val = $(this).val()
-		if (val == "GET") {
-			$(".command-div").hide();
-		} else {
-			$(".command-div").show();
-		}
-	})
+	Task_type_click();
+	Task_Api_Method_click();
+	IsShowEmailInfo({{.task.Notify}})
 });
 
-/*
-//构造要保存的数据
-function ConstructSubmitData() {
-	var data = {
-	    group_id: $("#group_id").val(),
-		task_name: $("#task_name").val(),
-		description: $("#description").val(),
-		concurrent: $(".concurrent input:checked"),
-		cron_spec: $("#cron_spec").val(),
-		command: $("#command").val(),
-		notify: $(".notify input:checked").val(),
-		timeout: $("#timeout").val(),
-        notify_email: $("#notify_email").val(),
-		runfilename: $("#uploadFile").attr("data-file") == undefined ? "" : $("#uploadFile").attr("data-file")
-	};
+function Task_Api_Method_click() {
+	$("#api_method").on("change", function(){
+		if ($(this).val() == "GET") {
+			$(".postbody_div").hide()
+		} else {
+			$(".postbody_div").show()
+		}
+	});
 }
-*/
 
-function CheckFile(obj) {
-	var array = new Array('zip');  //可以上传的文件类型
-	if (obj.value == '') {
-		alert("请上传zip文件!");
-		return false;
+function Task_type_click() {
+	$("#task_type").on("change", function(){
+		var task_type = $(this).val()
+		ShowHideContent(task_type)
+	});
+}
+
+function DisableContent() {
+	if ({{.isview}} ==  1) {
+		$("#btn-save").hide();
+		$("#api_method").attr('disabled', true);
+		$("#group_id").attr('disabled', true);
+	}
+}
+
+function ApiIsShow(flag) {
+	if (flag) {
+		$("#api_header_parent").show();
+		$("#api_url_parent").show();
+		$("#api_method_parent").show();
+		$(".postbody_div").show();
+		
+		if ($("#api_method").val() == "GET") {
+		$(".postbody_div").hide()
+	}
 	}
 	else {
-		var fileContentType = obj.value.match(/^(.*)(\.)(.{1,8})$/)[3];
-		var isExists = false;
-		for (var i in array) {
-			if (fileContentType.toLowerCase() == array[i].toLowerCase()) {
-				isExists = true;
-				return true;
-			}
-		}
-		if (isExists == false) {
-			obj.value = null;
-			alert("请上传zip文件!");
-			return false;
-		}
-		return false;
+		$("#api_header_parent").hide();
+		$("#api_url_parent").hide();
+		$("#api_method_parent").hide();
+		$(".postbody_div").hide();
 	}
 }
+
+function ShowDifferentContent() {
+	var task_type = $("#task_type").val();
+	ShowHideContent(task_type);
+}
+
+function ShowHideContent(task_type) {
+	if (task_type == 0) {
+		ApiIsShow(false);
+		$("#command_parent").show();
+		$("#file_parent").hide();
+	} else if (task_type == 1) {
+		ApiIsShow(false);
+		$("#command_parent").show();
+		$("#file_parent").show();
+	} else {
+		ApiIsShow(true);
+		$("#command_parent").show();	
+		$("#file_parent").hide();
+	}
+}
+
+function CheckFile(obj) {
+    var array = new Array('zip');  //可以上传的文件类型
+    if (obj.value == '') {
+        alert("请上传zip文件, 如demo.zip");
+        return false;
+    }
+    else {
+        var fileContentType = obj.value.match(/^(.*)(\.)(.{1,8})$/)[3];
+        var isExists = false;
+        for (var i in array) {
+            if (fileContentType.toLowerCase() == array[i].toLowerCase()) {
+                isExists = true;
+                return true;
+            }
+        }
+        if (isExists == false) {
+            obj.value = null;
+            alert("请上传zip文件, 如demo.zip");
+            return false;
+        }
+        return false;
+    }
+}
+
+function IsShowEmailInfo(notify) {
+	if (notify > 0) {
+			$('.notify_email_parent').removeClass('hide');
+		} else {
+			$('.notify_email_parent').addClass('hide');
+		}
+}
+
 </script>

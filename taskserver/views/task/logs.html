@@ -13,13 +13,20 @@
 		
 		<p>
 		<h3>{{.task.Name}} （#{{.task.Id}}）</h3>
-		
+
 		{{if eq .task.TaskType 2}}
-		<pre>{{.task.TaskApiUrl}}</pre>
-		<pre>{{.task.TaskApiMethod}}</pre>
+			<pre>地址：{{.task.TaskApiUrl}}</pre>
+			<pre>调用方法：{{.task.TaskApiMethod}}</pre>
+			<pre>调用头信息：<br/>{{.task.ApiHeader}}</pre>
+			{{if eq .task.TaskApiMethod "POST"}}
+			<pre>调用Body信息：<br/>{{.task.ApiBody}}</pre>
+			{{end}}
+		{{else if eq .task.TaskType 1}}
+			<pre>命令脚本：{{.task.Command}}</pre>
+			<pre>程序文件：{{.task.OldZipFile}}</pre>
+		{{else}}
+			<pre>命令脚本：{{.task.Command}}</pre>
 		{{end}}
-		
-		<pre>{{.task.Command}}</pre>
 		</p>
 		<hr />
 		

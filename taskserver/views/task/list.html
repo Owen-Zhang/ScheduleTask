@@ -2,6 +2,12 @@
 	.job-btn a {
 		margin-left : 2px;
 	}
+	.color-gree {
+		color:green
+	}
+	.color-red {
+		color:red
+	}
 </style>
 
 <div class="row">
@@ -36,12 +42,6 @@
 			
 			<div class="btn-group  btn-large" style="float:right">
 			<form method="post" name="s" action="{{urlfor "TaskController.List"}}">
-				<select name="workerid" class="btn-large" style="padding-top: 0px;">
-					<option value="0">全部Worker</option>
-					{{range $k, $v := .workers}}
-					<option value="{{$v.Id}}" {{if eq $v.Id $.workerid}}selected{{end}}>{{$v.Name}}</option>
-					{{end}}
-				</select>
 				<select name="groupid" class="btn-large" style="padding-top: 0px;">
 					<option value="0">全部分组</option>
 					{{range $k, $v := .groups}}
@@ -58,15 +58,14 @@
 			<thead>
 			<tr>
 				<th width="20"><input type="checkbox" name="chkall" value="1"></td>
-				<th width="40">ID</th>
+				<!--<th width="40">ID</th>-->
+				<th width="50">任务状态</th>
+				<th width="50">运行状态</th>
+				<th width="50">平台</th>
 				<th>任务名称</th>
 				<th>时间表达式</th>
-				<th>任务类型</th>
-				<th>所属Worker</th>
-				<th>所属分组</th>
-				<!--<th class="span2">上次执行时间</th>
+				<th class="span2">上次执行时间</th>
 				<th class="span2">下次执行时间</th>
-				!-->
 				<th class="span5">操作</th>
 			</tr>
 			</thead>
@@ -74,25 +73,30 @@
 			{{range $k, $v := .list}}
 				<tr>
 					<td><input type="checkbox" name="ids" value="{{$v.id}}" /></td>
-					<td class="center">{{$v.id}}</td>
+					<!--<td class="center">{{$v.id}}</td>-->
+					<td class="task_status">{{if eq $v.status 0}}<span class="color-red">停用中</span>{{else}}<span class="color-gree">启用中</span>{{end}}</td>
+					<td class="run_status">
+						{{if eq $v.status 0}}
+						<span class="color-red">未运行</span>
+						{{else if eq $v.run_status 0}}
+						<span class="color-gree">成功</span>
+						{{else}}
+						<span class="color-red">失败</span>
+						{{end}}
+					</td>
+					<td>{{$v.system}}</td>
 					<td>
 						<span data-toggle="tooltip" data-placement="bottom" title="{{$v.description}}">{{$v.name}}</span>
 					</td>
 					<td>{{$v.cron_spec}}</td>
-					<td>
-					{{if eq $v.tasktype 0}} 命令 {{else if eq $v.tasktype 1}} 文件 {{else}} API {{end}}
-					</td>
-					<td>{{$v.workname}}</td>
-					<td>{{$v.groupname}}</td>
-					<!--<td>{{$v.prev_time}}</td>
+					<td>{{$v.prev_time}}</td>
 					<td>{{$v.next_time}}</td>
-					!-->
 					<td status="{{$v.status}}" class="job-btn" Id="{{$v.id}}">
 						<a class="btn btn-start btn-self" href="javascript:;">开始</a>
 						<a class="btn btn-edit btn-self" href="{{urlfor "TaskController.Edit"}}?id={{$v.id}}">编辑</a>
 						<a class="btn btn-run btn-self" href="javascript:;">执行</a>
 						<a class="btn btn-delete btn-self" href="javascript:;">删除</a>
-						<a class="btn btn-view btn-self btn-info" href="{{urlfor "TaskController.Edit"}}?id={{$v.id}}&status=view">详情</a>
+						<a class="btn btn-info btn-self" href="{{urlfor "TaskController.View"}}?id={{$v.id}}">详情</a>
 						<a class="btn btn-info btn-self" href="{{urlfor "TaskController.Logs"}}?id={{$v.id}}">日志</a>
 					</td>
 				</tr>
@@ -103,6 +107,7 @@
 			</tfoot>
 		</table>
 		</form>
+		
 		</div>
 	</div>
 </div>
@@ -116,10 +121,6 @@ $(function() {
 	});
 
 	$("select[name='groupid']").change(function () {
-		$("form[name='s']").submit();
-	});
-	
-	$("select[name='workerid']").change(function () {
 		$("form[name='s']").submit();
 	});
 
@@ -144,15 +145,19 @@ $(function() {
             data: {"id" :id},
             success: function (result) {
                 if (result.IsSuccess) {
+                    UI.HideLoading();
                     td.prev().html(result.Data.Next);
                     td.prev().prev().html(result.Data.Prev);
                     td.attr("status", result.Data.Status);
-
+					
+					var task_status_str = "<span class='color-gree'>启用中</span>";  //RunStatus
+					if (result.Data.Status == 0) {
+						task_status_str = "<span class='color-red'>停用中</span>";
+					}
+					td.siblings(".task_status").html(task_status_str);
+					
                     InitBtn(id);
-				} else {
-                    $(".alert").text(result.Msg).show();
 				}
-                UI.HideLoading();
             }
         });
     });
@@ -184,12 +189,23 @@ $(function() {
 				{
                     td.prev().html(result.Data.Next);
                     td.prev().prev().html(result.Data.Prev);
+
+					var run_status_str = "<span class='color-gree'>成功</span>";  
+					if (result.Data.RunStatus == 1) {
+						run_status_str = "<span class='color-red'>失败</span>";
+					}
+					td.siblings(".run_status").html(run_status_str);
 				}
             }
 		});
     });
 
     $(".btn-delete").click(function (event) {
+
+		if (!confirm("确认删除此任务")) {
+			return;
+		}
+
         if ($(this).attr("disabled") == "disabled") {
             event.preventDefault();
             return;
@@ -269,6 +285,12 @@ function batch(action) {
 	if ($("input[name='ids']:checked").size() < 1) {
 		$(".alert").text("请选择要操作的任务");
 		$(".alert").show();
+
+		if (action == "delete") {
+			if (!confirm("确认删除这些任务")) {
+				return;
+			}
+		}
 	} else {
 		var url = "{{urlfor "TaskController.Batch"}}";
 		$.post(url + "?action=" + action, $("#form-list").serialize(), function(out) {

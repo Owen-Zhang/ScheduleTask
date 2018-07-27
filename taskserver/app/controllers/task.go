@@ -42,6 +42,7 @@ func (this *TaskController) List() {
 	for k, v := range result {
 		row := make(map[string]interface{})
 		row["id"] = v.Id
+		row["system"] = v.System
 		row["name"] = v.Name
 		row["cron_spec"] = v.CronSpec
 		row["status"] = v.Status
@@ -155,6 +156,28 @@ func (this *TaskController) Edit() {
 	this.display("task/add")
 }
 
+//查看任务
+func (this *TaskController) View() {
+	id, _ := this.GetInt("id")
+
+	task, err := dataaccess.GetTaskById(id)
+	if err != nil {
+		this.showMsg(err.Error())
+	}
+
+	// 分组列表
+	groups, _ := dataaccess.TaskGroupGetList(1, 100)
+	workers,_ := dataaccess.GetWorkerList(1, "")
+
+	this.Data["groups"] = groups
+	this.Data["task"] = task
+	this.Data["workers"] = workers
+
+	this.Data["pageTitle"] = "查看任务"
+	this.Data["isview"] = 1
+	this.display("task/add")
+}
+
 //保存任务
 func (this *TaskController) SaveTask() {
 	id, _ := this.GetInt("id", 0)
@@ -194,7 +217,7 @@ func (this *TaskController) SaveTask() {
 	}
 	task.TaskApiUrl = strings.TrimSpace(this.GetString("task_url"))
 	task.ApiHeader = strings.TrimSpace(this.GetString("api_header"))
-	useruploadfile := strings.TrimSpace(this.GetString("oldzipfile"))
+	useruploadfile := strings.TrimSpace(this.GetString("old_zip_file"))
 	
 	isUploadNewFile := false
 	if task.TaskType == 1 && task.OldZipFile != useruploadfile {
@@ -232,9 +255,9 @@ func (this *TaskController) SaveTask() {
 	}
 
 	if task.TaskType == 1 && isUploadNewFile && task.OldZipFile != "" {
-		
-		/*runFileName: 记录处理过的文件名(为了保存文件名不重复，重新取文件名); OldZipFile: 用户上传的文件名*/
-		runFileName := strings.TrimSpace(this.GetString("runfilename"))
+		/*new_temp_file: 记录处理过的文件名(为了保存文件名不重复，重新取文件名); OldZipFile: 用户上传的文件名*/
+		runFileName := strings.TrimSpace(this.GetString("new_temp_file"))
+		fmt.Println(runFileName)
 
 		filepath := model.ServerTempFileFolder + "/" +  runFileName
 		//上传文件到文件服务器

@@ -1,21 +1,21 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"html/template"
+	"ScheduleTask/storage"
 	"github.com/astaxie/beego"
 	"ScheduleTask/taskserver/app/controllers"
 	"ScheduleTask/taskserver/app/healthy"
-	"ScheduleTask/storage"
-	"fmt"
 )
-//还要增加一个任务状态，表示客户机出了问题，不是人为的结束任务的运行
-//worker机器要存一个zip文件名， 用来判断本地和服务器上的文件是否相同，不同的话就要更新
+
+
 func main()  {
 
 	defer func(){
 		if err := recover(); err != nil {
-			fmt.Println(err)
+			beego.Error(err)
 		}
 	}()
 
@@ -28,13 +28,13 @@ func main()  {
 	}
 	dataaccess, errData := storage.NewDataStorage(arg)
 	if errData != nil {
-		fmt.Printf("init storage dataaccess has wrong: %s", errData)
+		beego.Error(fmt.Sprintf("init storage dataaccess has wrong: %s", errData))
 		return
 	}
 	defer dataaccess.Close()
 
-	//1: 加载要执行的任务数据(多久去check worker的状态)
-	healthy.InitHealthCheck(beego.AppConfig.String("site.cron"), dataaccess)
+	// 监控worker的报告状态
+	go healthy.CheckWorkerStatus()
 
 	// 设置默认404页面
 	beego.ErrorHandler("404", func(rw http.ResponseWriter, r *http.Request) {
@@ -53,7 +53,8 @@ func main()  {
 	beego.Router("/help", &controllers.HelpController{}, "*:Index")
 	beego.AutoRouter(&controllers.TaskController{})
 	beego.AutoRouter(&controllers.GroupController{})
-	beego.AutoRouter(&controllers.WorkerController{})
+	//beego.AutoRouter(&controllers.WorkerController{})
+	beego.AutoRouter(&controllers.HealthController{})
 
 	beego.BConfig.WebConfig.Session.SessionOn = true
 	beego.Run()

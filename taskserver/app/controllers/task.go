@@ -8,7 +8,7 @@ import (
 	"ScheduleTask/model"
 	"ScheduleTask/utils/system"
 	"fmt"
-	"net/http"
+	//"net/http"
 
 	"ScheduleTask/taskserver/app/libs"
 	"github.com/astaxie/beego"
@@ -35,7 +35,7 @@ func (this *TaskController) List() {
 
 	// 分组列表
 	groups, _ := dataaccess.TaskGroupGetList(1, 100)
-	workersTemp, _:= dataaccess.GetWorkerList(2, "")
+	//workersTemp, _:= dataaccess.GetWorkerList(2, "")
 	
 	result, count := dataaccess.TaskGetList(page, this.pageSize, -1, groupId, workerid)
 	list := make([]map[string]interface{}, len(result))
@@ -55,22 +55,23 @@ func (this *TaskController) List() {
 			if val.Id == v.GroupId {
 				row["groupname"] = val.GroupName
 			}
-		}	
+		}
+		/*
 		for _,val := range workersTemp {
 			if val.Id == v.WorkerId {
-				row["workname"] = val.Name
+				row["workname"] = "test" //val.Name
 			}
-		}
+		}*/
 			
 		list[k] = row
 	}
 
-	workers, _:= dataaccess.GetWorkerList(1, "")
-	
+	//workers, _:= dataaccess.GetWorkerList(1, "")
+
 	this.Data["pageTitle"] = "任务列表"
 	this.Data["list"] = list
 	this.Data["groups"] = groups
-	this.Data["workers"] = workers
+	//this.Data["workers"] = workers
 	this.Data["groupid"] = groupId
 	this.Data["workerid"] = workerid
 	this.Data["pageBar"] = libs.NewPager(page, int(count), this.pageSize, beego.URLFor("TaskController.List", "groupid", groupId, "workerid", workerid), true).ToString()
@@ -124,10 +125,10 @@ func (this *TaskController) UploadRunFile() {
 // 添加任务
 func (this *TaskController) Add() {
 	groups, _ := dataaccess.TaskGroupGetList(1, 100)
-	workers,_ := dataaccess.GetWorkerList(1, "")
+	//workers,_ := dataaccess.GetWorkerList(1, "")
 
 	this.Data["groups"] = groups
-	this.Data["workers"] = workers
+	//this.Data["workers"] = workers
 	this.Data["pageTitle"] = "添加任务"
 	this.display()
 }
@@ -143,10 +144,10 @@ func (this *TaskController) Edit() {
 
 	// 分组列表
 	groups, _ := dataaccess.TaskGroupGetList(1, 100)
-	workers,_ := dataaccess.GetWorkerList(1, "")
+	//workers,_ := dataaccess.GetWorkerList(1, "")
 
 	this.Data["groups"] = groups
-	this.Data["workers"] = workers
+	//this.Data["workers"] = workers
 	this.Data["task"] = task
 	this.Data["pageTitle"] = "编辑任务"
 	
@@ -167,11 +168,11 @@ func (this *TaskController) View() {
 
 	// 分组列表
 	groups, _ := dataaccess.TaskGroupGetList(1, 100)
-	workers,_ := dataaccess.GetWorkerList(1, "")
+	//workers,_ := dataaccess.GetWorkerList(1, "")
 
 	this.Data["groups"] = groups
 	this.Data["task"] = task
-	this.Data["workers"] = workers
+	//this.Data["workers"] = workers
 
 	this.Data["pageTitle"] = "查看任务"
 	this.Data["isview"] = 1
@@ -429,7 +430,7 @@ func (this *TaskController) Start() {
 		this.jsonResult(result)
 	}
 
-	task, err := dataaccess.GetTaskById(id)
+	_, err := dataaccess.GetTaskById(id)
 	if err != nil {
 		result.Msg = err.Error()
 		this.jsonResult(result)
@@ -437,6 +438,8 @@ func (this *TaskController) Start() {
 
 	/*如果任务没有分配机子，就动态的去分配一个, 后面会做一个机器的运行的状态表，去确定分配给谁*/
 	/*暂时去数据库中查询一个满足条件的worker*/
+
+	/*
 	if task.WorkerId <= 0 {
 		worker, err := dataaccess.GetOneWorker("", task.WorkerId)
 		if err != nil {
@@ -444,7 +447,7 @@ func (this *TaskController) Start() {
 			this.jsonResult(result)
 		}
 	} else {
-		/*检查选择的机器是否还在运行状态*/
+		//检查选择的机器是否还在运行状态
 
 	}
 
@@ -472,7 +475,7 @@ func (this *TaskController) Start() {
 
 			this.jsonResult(result)
 		}
-	}
+	}*/
 
 	this.jsonResult(&response.ResultData{
 		IsSuccess: true,
@@ -511,6 +514,7 @@ func (this *TaskController) Run()  {
 	}
 
 	if task != nil {
+		/*
 		worker, err := dataaccess.GetOneWorker("", task.WorkerId)
 		if err != nil {
 			result.Msg = err.Error()
@@ -530,6 +534,7 @@ func (this *TaskController) Run()  {
 				this.jsonResult(result)
 			}
 		}
+		*/
 	}
 	
 	this.jsonResult(&response.ResultData{
@@ -556,12 +561,13 @@ func (this *TaskController) Pause() {
 		this.jsonResult(result)
 	}
 	
-	task, err := dataaccess.GetTaskById(id)
+	_, err := dataaccess.GetTaskById(id)
 	if err != nil {
 		result.Msg = err.Error()
 		this.jsonResult(result)
 	}
-	
+
+	/*
 	if task != nil {
 		worker, err := dataaccess.GetOneWorker("", task.WorkerId)
 		if err != nil {
@@ -590,6 +596,7 @@ func (this *TaskController) Pause() {
 			}
 		}
 	}
+	*/
 	
 	this.jsonResult(&response.ResultData{
 		IsSuccess: true,
@@ -615,12 +622,13 @@ func (this *TaskController) Delete() {
 		this.jsonResult(result)
 	}
 
-	task, err := dataaccess.GetTaskById(id)
+	_, err := dataaccess.GetTaskById(id)
 	if err != nil {
 		result.Msg = err.Error()
 		this.jsonResult(result)
 	}
-	
+
+	/*
 	if task != nil {
 		//根据任务去找到worker相关的地址信息
 		worker, err := dataaccess.GetOneWorker("", task.WorkerId)
@@ -649,6 +657,7 @@ func (this *TaskController) Delete() {
 			}
 		}	
 	}
+	*/
 		
 	result.IsSuccess = true
 	this.jsonResult(result)

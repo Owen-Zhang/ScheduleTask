@@ -1,5 +1,6 @@
 package storage
 
+/*
 import (
 	"ScheduleTask/model"
 	"fmt"
@@ -84,3 +85,4 @@ func (this *DataStorage) GetWorkerList(status int, systeminfo string) ([]*model.
 	}
 	return result, nil
 }
+*/

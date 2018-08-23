@@ -1,14 +1,13 @@
 package etc
 
-import "ScheduleTask/storage"
-import "gopkg.in/yaml.v2"
-
 import (
 	"io/ioutil"
 	"ScheduleTask/taskworker/api"
-	"os"
 	"ScheduleTask/taskworker/jobs"
+	workermodel "ScheduleTask/taskworker/model"
 	"ScheduleTask/model"
+	"ScheduleTask/storage"
+	"gopkg.in/yaml.v2"
 )
 
 type Configuration struct {
@@ -21,7 +20,9 @@ type Configuration struct {
 	} `yaml:"storage,omitempty"`
 
 	ApiServer struct {
+		Ip   string `yaml:"ip,omitempty"`
 		Bind string `yaml:"bind,omitempty"`
+		Note string `yaml:"note,omitempty"`
 	} `yaml:"apiserver,omitempty"`
 
 	CronService struct {
@@ -32,7 +33,12 @@ type Configuration struct {
 		Hosts   string `yaml:"hosts,omitempty"`
 		Port 	int    `yaml:"port,omitempty"`
 	} `yaml:"fileserver,omitempty"`
-	
+
+	CenterInfo struct {
+		Hosts   string `yaml:"hosts,omitempty"`
+		Port 	int    `yaml:"port,omitempty"`
+	}
+
 	WorkerInfo struct {
 		Identification int `yaml:"identification,omitempty"`
 	} `yaml:"workerinfo,omitempty"`
@@ -41,14 +47,8 @@ type Configuration struct {
 
 var configuration *Configuration
 
-func New(file string) error {
-	fp, err := os.OpenFile(file, os.O_RDWR, 0777)
-	if err != nil {
-		return err
-	}
-
-	defer fp.Close()
-	data, err := ioutil.ReadAll(fp)
+func newconfig(file string) error {
+	data, err := ioutil.ReadFile(file)
 	if err != nil {
 		return err
 	}
@@ -80,9 +80,13 @@ func makeDefault() *Configuration {
 		},
 
 		ApiServer: struct {
+			Ip   string `yaml:"ip,omitempty"`
 			Bind string `yaml:"bind,omitempty"`
+			Note string `yaml:"note,omitempty"`
 		}{
+			Ip  : "192.168.0.103",
 			Bind: ":8985",
+			Note: "worker机器相关说明",
 		},
 
 		CronService: struct {
@@ -97,6 +101,14 @@ func makeDefault() *Configuration {
 		}{
 			Hosts:  "127.0.0.1",
 			Port: 8988,
+		},
+
+		CenterInfo: struct {
+			Hosts  string `yaml:"hosts,omitempty"`
+			Port   int    `yaml:"port,omitempty"`
+		}{
+			Hosts:  "127.0.0.1",
+			Port: 8000,
 		},
 		
 		WorkerInfo: struct {
@@ -126,7 +138,9 @@ func GetStorageArg() *storage.DataStorageArgs {
 func GetApiServerArg() *api.ApiServerArg {
 	if configuration != nil {
 		return &api.ApiServerArg{
+			Ip  : configuration.ApiServer.Ip,
 			Bind: configuration.ApiServer.Bind,
+			Note: configuration.ApiServer.Note,
 		}
 	}
 	return nil
@@ -153,10 +167,11 @@ func GetFileServerInfo() *model.FileServerInfo {
 	return nil
 }
 
-func GetWorkerInfo() *model.WorkerInfo {
+func GetCenterInfo() *workermodel.CenterInfo  {
 	if configuration != nil {
-		return &model.WorkerInfo{
-			Identification :configuration.WorkerInfo.Identification,
+		return &workermodel.CenterInfo{
+			Hosts: configuration.CenterInfo.Hosts,
+			Port : configuration.CenterInfo.Port,
 		}
 	}
 	return nil

@@ -1,5 +1,9 @@
 package healthy
 
+/*
+import "time"
+
+
 import (
 	"time"
 	"fmt"
@@ -119,3 +123,4 @@ func runWithTimeOut(url string, port int, timeout time.Duration) bool {
 
 	return respose.StatusCode == http.StatusOK
 }
+*/

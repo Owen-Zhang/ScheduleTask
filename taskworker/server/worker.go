@@ -1,14 +1,12 @@
 package server
 
 import (
-	"flag"
+	"errors"
 	"ScheduleTask/taskworker/api"
 	"ScheduleTask/taskworker/ctrl"
 	"ScheduleTask/taskworker/etc"
 	"ScheduleTask/taskworker/jobs"
 	"ScheduleTask/storage"
-	"errors"
-	"ScheduleTask/taskworker/global"
 )
 
 type JobWork struct {
@@ -18,14 +16,6 @@ type JobWork struct {
 }
 
 func NewWorker() (*JobWork, error) {
-
-	var etcfile string
-	flag.StringVar(&etcfile, "f", "etc/worker.yml", "worker etc file.")
-	flag.Parse()
-	if err := etc.New(etcfile); err != nil {
-		return nil, err
-	}
-
 	storagearg := etc.GetStorageArg()
 	dataaccess, err := storage.NewDataStorage(storagearg)
 	if err != nil {
@@ -36,11 +26,12 @@ func NewWorker() (*JobWork, error) {
 	if fileserverinfo == nil {
 		return nil, errors.New("get FileServerInfo is wrong")
 	}
-	
+
+	/*
 	workerinfo := etc.GetWorkerInfo()
 	if workerinfo == nil {
 		return nil, errors.New("GetWorkerInfo is wrong")
-	}
+	}*/
 	
 	controller := ctrl.NewController(dataaccess, fileserverinfo)
 	apiserver := api.NewAPiServer(etc.GetApiServerArg(), controller)
@@ -53,10 +44,10 @@ func NewWorker() (*JobWork, error) {
 	}
 
 	//加载本地的任务到任务队列中
-	job.Controller.AddAutoRunSelfTask(workerinfo.Identification)
+	//job.Controller.AddAutoRunSelfTask(workerinfo.Identification)
 
 	/*worker的相关信息*/
-	global.WorkerInformation = workerinfo;
+	//global.WorkerInformation = workerinfo;
 	
 	return job, nil
 }

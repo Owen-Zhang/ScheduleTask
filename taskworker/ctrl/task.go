@@ -14,7 +14,6 @@ import (
 	"path"
 	"sync"
 	"errors"
-	"ScheduleTask/taskworker/global"
 )
 
 //运行任务(包括新增和重新启动)
@@ -26,7 +25,7 @@ func (this *Controller) start(request *Action) {
 		return
 	}
 
-	if task == nil || task.Status != 1 || task.WorkerId != global.WorkerInformation.Identification {
+	if task == nil || task.Status != 1 {
 		return
 	}
 
@@ -255,6 +254,7 @@ func (this *Controller) updateFileInfo(task *model.TaskExend) error {
 	return nil
 }
 
+/*
 //加载本地的任务到任务队列中
 func (this *Controller) AddAutoRunSelfTask(identification int) {
 	list,_ := this.Storage.TaskGetList(1, 100, 1, 0, identification)
@@ -268,4 +268,4 @@ func (this *Controller) AddAutoRunSelfTask(identification int) {
 			Id         : val.Id,
 		}
 	}
-}
+}*/

@@ -1,12 +1,12 @@
 package controllers
 
 import (
-	"github.com/astaxie/beego"
 	"strings"
 	"strconv"
-	"ScheduleTask/taskserver/app/libs"
 	"ScheduleTask/model"
 	"ScheduleTask/storage"
+	"github.com/astaxie/beego"
+	"ScheduleTask/taskserver/app/libs"
 )
 
 const (
@@ -32,6 +32,10 @@ func InitCtrl(access *storage.DataStorage)  {
 }
 
 func (this *BaseController) Prepare() {
+	if this.Ctx.Request.URL.Path == "/health/ping" {
+		return
+	}
+
 	this.pageSize = 20
 	controllerName, actionName := this.GetControllerAndAction()
 	this.controllerName = strings.ToLower(controllerName[0 : len(controllerName)-10])

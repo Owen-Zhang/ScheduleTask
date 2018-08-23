@@ -1,16 +1,23 @@
+#数据库访问配制
 storage:
     hosts: 127.0.0.1
-    dbname: jobscheduletask
+    dbname: scheduletask
     user: root
     password: 123456
     port: 3306
+#worker相关信息配制(ip地址是要报告给center，推送任务时要用到)
 apiserver:
+    ip: 192.168.0.103
     bind: :8985
+    note: 本机测试相关task
+#定时任务的相关配制
 cron:
   poolsize: 10
+#文件服务器的配制
 fileserver:
     hosts: 127.0.0.1
     port: 8988
-workerinfo:
-	identification: 1
-...
+#master的配制信息
+centerinfo:
+    hosts: 127.0.0.1
+    port: 8000

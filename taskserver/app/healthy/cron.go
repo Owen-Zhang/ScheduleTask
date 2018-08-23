@@ -1,5 +1,6 @@
 package healthy
 
+/*
 import (
 	"github.com/Owen-Zhang/cron"
 	"sync"
@@ -80,3 +81,4 @@ func ExistJob(id int) bool  {
 	}
 	return false
 }
+*/

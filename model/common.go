@@ -26,11 +26,6 @@ type FileServerInfo struct {
 	Port   int    
 }
 
-//客户端相关信息
-type WorkerInfo struct {
-	Identification int   //标识，这个标识由服务器端统一分配，标识是哪个客户端
-}
-
 type CommonInfo struct {
 	SystemName string   //系统名称(windows, linux)
 }

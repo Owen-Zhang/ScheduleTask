@@ -13,7 +13,7 @@ import (
 
 func main() {
 
-	logs.SetLogger(logs.AdapterFile,`{"filename":"project.log"}`)
+	logs.SetLogger(logs.AdapterFile,`{"filename":"worker.log"}`)
 
 	defer func() {
 		if err := recover(); err != nil {

@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"ScheduleTask/storage"
 	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/logs"
 	"ScheduleTask/taskserver/app/controllers"
 	"ScheduleTask/taskserver/app/healthy"
 )
@@ -13,9 +14,11 @@ import (
 
 func main()  {
 
+	logs.SetLogger(logs.AdapterFile,`{"filename":"server.log"}`)
+
 	defer func(){
 		if err := recover(); err != nil {
-			beego.Error(err)
+			logs.Error(err)
 		}
 	}()
 
@@ -28,7 +31,7 @@ func main()  {
 	}
 	dataaccess, errData := storage.NewDataStorage(arg)
 	if errData != nil {
-		beego.Error(fmt.Sprintf("init storage dataaccess has wrong: %s", errData))
+		logs.Error(fmt.Sprintf("init storage dataaccess has wrong: %s", errData))
 		return
 	}
 	defer dataaccess.Close()

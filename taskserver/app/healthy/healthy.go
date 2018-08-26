@@ -22,7 +22,7 @@ func (s byTime) Less(i, j int) bool {
 		return true
 	}
 
-	return s[i].ReceiveTime.Before(s[j].ReceiveTime)
+	return s[i].TimeOut.Before(s[j].TimeOut)
 }
 
 type healthy struct{
@@ -44,7 +44,8 @@ func init()  {
 // 将报告数据加入到通道中
 func Input(info *system.HealthInfo) {
 	Health.add <- &system.HealthInfo{
-		ReceiveTime:time.Now().In(Health.timeLocation),
+		Status: 0,
+		TimeOut:time.Now().Add(3 * time.Minute),//.In(Health.timeLocation),
 		WorkerInfo:system.WorkerInfo{
 			Name:info.WorkerInfo.Name,
 			Ip: info.WorkerInfo.Ip,
@@ -61,7 +62,7 @@ func add(info *system.HealthInfo)  {
 		Health.workerList = append(Health.workerList, info)
 	} else {
 		one.Status = 0
-		one.ReceiveTime = time.Now().In(Health.timeLocation)
+		one.TimeOut = info.TimeOut
 	}
 }
 
@@ -82,36 +83,38 @@ func CheckWorkerStatus() {
 		}
 	}()
 
-	now := time.Now().In(Health.timeLocation)
+	now := time.Now()//.In(Health.timeLocation)
 	for {
 		sort.Sort(byTime(Health.workerList))
 
 		var timer *time.Timer
-		if len(Health.workerList) == 0{
+		if len(Health.workerList) == 0 || Health.workerList[0].Status == -1 || Health.workerList[0].TimeOut.Before(now) {
 			fmt.Println("0")
 			timer = time.NewTimer(100000 * time.Hour)
 		} else {
 			fmt.Println("1")
-			timer = time.NewTimer(now.Add(3 * time.Minute).Sub(Health.workerList[0].ReceiveTime))
+			logs.Info(Health.workerList[0].TimeOut.Sub(now))
+			timer = time.NewTimer(Health.workerList[0].TimeOut.Sub(now))
 		}
-
-		fmt.Println("ggggg")
 
 		for {
 			select {
 			case now = <-timer.C:
-				now = now.In(Health.timeLocation)
+				//now = now.In(Health.timeLocation)
 				for index, val := range Health.workerList {
-					//fmt.Printf("receive + 3 minutes: %s", val.ReceiveTime.Add(3 * time.Minute).In(Health.timeLocation).Format("2006-01-02 15:04:05"))
-					//fmt.Printf("now: %s", now.Format("2006-01-02 15:04:05"))
-					fmt.Println(val.ReceiveTime.Add(3 * time.Minute).In(Health.timeLocation).Sub(now))
+					fmt.Println(now.Format("2006-01-02 15:04:05"))
+					fmt.Println(val.TimeOut.Format("2006-01-02 15:04:05"))
+					fmt.Println(val.Status)
 
-					if val.ReceiveTime.Add(3 * time.Minute).In(Health.timeLocation).Before(now) && val.Status != -1 {
-						Health.workerList[index].Status = -1
-						fmt.Println(Health.workerList[index].Status)
+					if val.TimeOut.After(now) || val.Status == -1 {
+						fmt.Println("break")
+						break
 					}
+					Health.workerList[index].Status = -1
+					logs.Info(Health.workerList[index].Status)
 				}
 			case newEntry := <- Health.add:
+				now = time.Now()
 				timer.Stop()
 				add(newEntry)
 			}

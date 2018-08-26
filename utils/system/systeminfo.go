@@ -11,7 +11,7 @@ import (
 type HealthInfo struct {
 	WorkerInfo    WorkerInfo   `json:"workerinfo"`                //worker机器信息
 	Status     	  int                              			   	  // 是否可用
-	ReceiveTime   time.Time                                       //发送时间
+	TimeOut       time.Time                                       //发送时间
 }
 
 // WorkerInfo 客户机器信息

@@ -1,23 +1,23 @@
 package controllers
 
 import (
-	"time"
 	"os"
+	"fmt"
+	"time"
+	"errors"
 	"strings"
 	"strconv"
-	"ScheduleTask/model"
-	"ScheduleTask/utils/system"
-	"fmt"
-	//"net/http"
-
-	"ScheduleTask/taskserver/app/libs"
-	"github.com/astaxie/beego"
-	"ScheduleTask/taskserver/app/models/response"
-	"github.com/Owen-Zhang/cron"
-	"github.com/imroc/req"
 	"io/ioutil"
+	"net/http"
 	"encoding/base64"
-	"errors"
+	"ScheduleTask/model"
+	"github.com/imroc/req"
+	"github.com/astaxie/beego"
+	"ScheduleTask/utils/system"
+	"github.com/Owen-Zhang/cron"
+	"ScheduleTask/taskserver/app/libs"
+	"ScheduleTask/taskserver/app/models/response"
+	"ScheduleTask/taskserver/app/healthy"
 )
 
 type TaskController struct {
@@ -31,13 +31,9 @@ func (this *TaskController) List() {
 		page = 1
 	}
 	groupId, _ := this.GetInt("groupid")
-	workerid, _ := this.GetInt("workerid")
-
 	// 分组列表
 	groups, _ := dataaccess.TaskGroupGetList(1, 100)
-	//workersTemp, _:= dataaccess.GetWorkerList(2, "")
-	
-	result, count := dataaccess.TaskGetList(page, this.pageSize, -1, groupId, workerid)
+	result, count := dataaccess.TaskGetList(page, this.pageSize, -1, groupId, "")
 	list := make([]map[string]interface{}, len(result))
 	for k, v := range result {
 		row := make(map[string]interface{})
@@ -66,15 +62,11 @@ func (this *TaskController) List() {
 		list[k] = row
 	}
 
-	//workers, _:= dataaccess.GetWorkerList(1, "")
-
 	this.Data["pageTitle"] = "任务列表"
 	this.Data["list"] = list
 	this.Data["groups"] = groups
-	//this.Data["workers"] = workers
 	this.Data["groupid"] = groupId
-	this.Data["workerid"] = workerid
-	this.Data["pageBar"] = libs.NewPager(page, int(count), this.pageSize, beego.URLFor("TaskController.List", "groupid", groupId, "workerid", workerid), true).ToString()
+	this.Data["pageBar"] = libs.NewPager(page, int(count), this.pageSize, beego.URLFor("TaskController.List", "groupid", groupId), true).ToString()
 	this.display()
 }
 
@@ -125,10 +117,7 @@ func (this *TaskController) UploadRunFile() {
 // 添加任务
 func (this *TaskController) Add() {
 	groups, _ := dataaccess.TaskGroupGetList(1, 100)
-	//workers,_ := dataaccess.GetWorkerList(1, "")
-
 	this.Data["groups"] = groups
-	//this.Data["workers"] = workers
 	this.Data["pageTitle"] = "添加任务"
 	this.display()
 }
@@ -144,10 +133,7 @@ func (this *TaskController) Edit() {
 
 	// 分组列表
 	groups, _ := dataaccess.TaskGroupGetList(1, 100)
-	//workers,_ := dataaccess.GetWorkerList(1, "")
-
 	this.Data["groups"] = groups
-	//this.Data["workers"] = workers
 	this.Data["task"] = task
 	this.Data["pageTitle"] = "编辑任务"
 	
@@ -168,12 +154,8 @@ func (this *TaskController) View() {
 
 	// 分组列表
 	groups, _ := dataaccess.TaskGroupGetList(1, 100)
-	//workers,_ := dataaccess.GetWorkerList(1, "")
-
 	this.Data["groups"] = groups
 	this.Data["task"] = task
-	//this.Data["workers"] = workers
-
 	this.Data["pageTitle"] = "查看任务"
 	this.Data["isview"] = 1
 	this.display("task/add")
@@ -211,7 +193,6 @@ func (this *TaskController) SaveTask() {
 	task.Command = strings.TrimSpace(this.GetString("command"))
 	task.Notify, _ = this.GetInt("notify")
 	task.TimeOut, _ = this.GetInt("timeout")
-	task.WorkerId,_ =  this.GetInt("worker_id")
 	task.TaskApiMethod = ""
 	if task.TaskType == 2 {
 		task.TaskApiMethod = strings.TrimSpace(this.GetString("task_method"))
@@ -258,7 +239,6 @@ func (this *TaskController) SaveTask() {
 	if task.TaskType == 1 && isUploadNewFile && task.OldZipFile != "" {
 		/*new_temp_file: 记录处理过的文件名(为了保存文件名不重复，重新取文件名); OldZipFile: 用户上传的文件名*/
 		runFileName := strings.TrimSpace(this.GetString("new_temp_file"))
-		fmt.Println(runFileName)
 
 		filepath := model.ServerTempFileFolder + "/" +  runFileName
 		//上传文件到文件服务器
@@ -430,52 +410,39 @@ func (this *TaskController) Start() {
 		this.jsonResult(result)
 	}
 
-	_, err := dataaccess.GetTaskById(id)
+	task, err := dataaccess.GetTaskById(id)
 	if err != nil {
 		result.Msg = err.Error()
 		this.jsonResult(result)
 	}
 
-	/*如果任务没有分配机子，就动态的去分配一个, 后面会做一个机器的运行的状态表，去确定分配给谁*/
-	/*暂时去数据库中查询一个满足条件的worker*/
-
-	/*
-	if task.WorkerId <= 0 {
-		worker, err := dataaccess.GetOneWorker("", task.WorkerId)
-		if err != nil {
-			result.Msg = err.Error()
-			this.jsonResult(result)
-		}
-	} else {
-		//检查选择的机器是否还在运行状态
-
+	//查找worker，分配任务
+	ip, port := healthy.FindWorker(task.System)
+	if ip == "" || port == "" {
+		result.Msg = fmt.Sprintf("没有找到当前可运行的worker[%s]", task.System)
+		this.jsonResult(result)
 	}
 
-	if worker != nil {
-		posturl := fmt.Sprintf(model.WorkerUrl, worker.Url, worker.Port, "starttask")
+	posturl := fmt.Sprintf(model.WorkerUrl, ip, port, "starttask")
+	updateerr := dataaccess.UpdateStatusAndWorkerInfo(id, 1, ip + port)
+	if updateerr != nil {
+		result.Msg = updateerr.Error()
+		this.jsonResult(result)
+	}
 
-		updateerr := dataaccess.TaskUpdateStatus(id, 1)
-		if updateerr != nil {
-			result.Msg = updateerr.Error()
-			this.jsonResult(result)
+	//向worker发送信息
+	res, err := req.Post(posturl, req.Param{"id" : id})
+	if err != nil || res.Response().StatusCode != http.StatusOK {
+		if err == nil {
+			result.Msg = "[Start]通知客戶端失敗"
+		} else {
+			result.Msg = err.Error()
 		}
+		//将状态改回去
+		dataaccess.UpdateStatusAndWorkerInfo(id, 0, "")
 
-		res, err :=
-			req.Post(posturl, req.Param{"id" : id})
-
-		if err != nil || res.Response().StatusCode != http.StatusOK {
-			if err == nil {
-				result.Msg = "[Start]通知客戶端失敗"
-			} else {
-				result.Msg = err.Error()
-			}
-
-			//将状态改回去
-			dataaccess.TaskUpdateStatus(id, 0)
-
-			this.jsonResult(result)
-		}
-	}*/
+		this.jsonResult(result)
+	}
 
 	this.jsonResult(&response.ResultData{
 		IsSuccess: true,
@@ -507,34 +474,26 @@ func (this *TaskController) Run()  {
 		this.jsonResult(result)
 	}
 
-	//这里可以分成两个动作，先start再run，后台统一去作处理
+	if task == nil {
+		result.Msg = "没有找到相应的任务信息"
+		this.jsonResult(result)
+	}
+
+	//这里可以分成两个动作，先start再run，后台统一去作处理, 这两个动作可以一起支行
 	if task.Status != 1 {
 		result.Msg = "请先开始任务再运行"
 		this.jsonResult(result)
 	}
 
-	if task != nil {
-		/*
-		worker, err := dataaccess.GetOneWorker("", task.WorkerId)
-		if err != nil {
-			result.Msg = err.Error()
-			this.jsonResult(result)
+	tempworker := strings.Split(task.WorkerInfo, "_")
+	posturl := fmt.Sprintf(model.WorkerUrl, tempworker[0], tempworker[1], "runtask")
+	res, err := req.Post(posturl, req.Param{"id": id})
+	if err != nil || res.Response().StatusCode != http.StatusOK {
+		result.Msg = err.Error()
+		if err == nil {
+			result.Msg = "[Run]通知客戶端失敗"
 		}
-
-		if worker != nil {
-			posturl := fmt.Sprintf(model.WorkerUrl, worker.Url, worker.Port, "stoptask")
-			fmt.Println(posturl)
-
-			res, err := req.Post(posturl, req.Param{"id": id})
-			if err != nil || res.Response().StatusCode != http.StatusOK {
-				result.Msg = err.Error()
-				if err == nil {
-					result.Msg = "[Stop]通知客戶端失敗"
-				}
-				this.jsonResult(result)
-			}
-		}
-		*/
+		this.jsonResult(result)
 	}
 	
 	this.jsonResult(&response.ResultData{
@@ -561,42 +520,32 @@ func (this *TaskController) Pause() {
 		this.jsonResult(result)
 	}
 	
-	_, err := dataaccess.GetTaskById(id)
+	task, err := dataaccess.GetTaskById(id)
 	if err != nil {
 		result.Msg = err.Error()
 		this.jsonResult(result)
 	}
 
-	/*
-	if task != nil {
-		worker, err := dataaccess.GetOneWorker("", task.WorkerId)
-		if err != nil {
-			result.Msg = err.Error()
-			this.jsonResult(result)
-		}
-		
-		if worker != nil {
-			posturl := fmt.Sprintf(model.WorkerUrl, worker.Url, worker.Port, "stoptask")
-			fmt.Println(posturl)
-			
-			res, err :=
-			req.Post(posturl, req.Param{"id" : id})
-			
-			if err != nil || res.Response().StatusCode != http.StatusOK {
-				result.Msg = err.Error()
-				if err == nil {
-					result.Msg = "[Stop]通知客戶端失敗"
-				}
-				this.jsonResult(result)
-			}
-			
-			if err := dataaccess.TaskUpdateStatus(id, 0); err != nil {
-				result.Msg = err.Error()
-				this.jsonResult(result)
-			}
-		}
+	if task == nil {
+		result.Msg = "没有找到相应的任务信息"
+		this.jsonResult(result)
 	}
-	*/
+
+	tempworker := strings.Split(task.WorkerInfo, "_")
+	posturl := fmt.Sprintf(model.WorkerUrl, tempworker[0], tempworker[1], "stoptask")
+	res, err := req.Post(posturl, req.Param{"id": id})
+	if err != nil || res.Response().StatusCode != http.StatusOK {
+		result.Msg = err.Error()
+		if err == nil {
+			result.Msg = "[Stop]通知客戶端失敗"
+		}
+		this.jsonResult(result)
+	}
+
+	if err := dataaccess.UpdateStatusAndWorkerInfo(id, 0, ""); err != nil {
+		result.Msg = err.Error()
+		this.jsonResult(result)
+	}
 	
 	this.jsonResult(&response.ResultData{
 		IsSuccess: true,
@@ -622,43 +571,33 @@ func (this *TaskController) Delete() {
 		this.jsonResult(result)
 	}
 
-	_, err := dataaccess.GetTaskById(id)
+	task, err := dataaccess.GetTaskById(id)
 	if err != nil {
 		result.Msg = err.Error()
 		this.jsonResult(result)
 	}
 
-	/*
-	if task != nil {
-		//根据任务去找到worker相关的地址信息
-		worker, err := dataaccess.GetOneWorker("", task.WorkerId)
-		if err != nil {
-			result.Msg = err.Error()
-			this.jsonResult(result)
-		}
-		if worker != nil {
-			posturl := fmt.Sprintf(model.WorkerUrl, worker.Url, worker.Port, "deletetask")
-			fmt.Println(posturl)
-			
-			res, err :=
-			req.Post(posturl, req.Param{"id" : id})
-			
-			if err != nil || res.Response().StatusCode != http.StatusOK {
-				result.Msg = err.Error()
-				if err == nil {
-					result.Msg = "[Delete]通知客戶端失敗"
-				}
-				this.jsonResult(result)
-			}
-			
-			if err := dataaccess.TaskDel(id); err != nil {
-				result.Msg = err.Error()
-				this.jsonResult(result)
-			}
-		}	
+	if task == nil {
+		result.Msg = "没有找到相应的任务信息"
+		this.jsonResult(result)
 	}
-	*/
-		
+
+	tempworker := strings.Split(task.WorkerInfo, "_")
+	posturl := fmt.Sprintf(model.WorkerUrl, tempworker[0], tempworker[1], "deletetask")
+	res, err := req.Post(posturl, req.Param{"id": id})
+	if err != nil || res.Response().StatusCode != http.StatusOK {
+		result.Msg = err.Error()
+		if err == nil {
+			result.Msg = "[Delete]通知客戶端失敗"
+		}
+		this.jsonResult(result)
+	}
+
+	if err := dataaccess.TaskDel(id); err != nil {
+		result.Msg = err.Error()
+		this.jsonResult(result)
+	}
+
 	result.IsSuccess = true
 	this.jsonResult(result)
 }

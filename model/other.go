@@ -12,4 +12,4 @@ type FileResponse struct {
 	FileName     		string   `json:"filename"` 		  //文件名称，如：4545489.exe
 }
 
-const WorkerUrl = "http://%s:%d/worker/%s"
+const WorkerUrl = "http://%s:%s/worker/%s"

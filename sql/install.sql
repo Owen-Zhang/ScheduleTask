@@ -37,7 +37,7 @@ CREATE TABLE `task` (
   `version` int(11) unsigned NOT NULL DEFAULT 0 COMMENT '版本号',
   `zip_file_path` VARCHAR(300) NOT NULL DEFAULT '' COMMENT 'zip获取地址(我们上传到文件服务器生成的文件名)',
   `deleted` int(11) unsigned NOT NULL DEFAULT  0 COMMENT '是否删除,1表示删除,0表示正常',
-  `worker_id` int(11) NOT NULL DEFAULT '0' COMMENT '客户端编号',
+  `worker_info` varchar(60) NOT NULL DEFAULT '' COMMENT '客户端编号ip_port',
   PRIMARY KEY (`id`),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_group_id` (`group_id`)

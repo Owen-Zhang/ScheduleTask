@@ -37,7 +37,7 @@ func main()  {
 	defer dataaccess.Close()
 
 	// 监控worker的报告状态
-	go healthy.CheckWorkerStatus()
+	go healthy.CheckWorkerStatus(dataaccess)
 
 	// 设置默认404页面
 	beego.ErrorHandler("404", func(rw http.ResponseWriter, r *http.Request) {

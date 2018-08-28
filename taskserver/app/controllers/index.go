@@ -133,6 +133,7 @@ func (this *MainController) Login() {
 		if username != "" && password != "" {
 			user, err := dataaccess.UserGetByName(username)
 			errorMsg := ""
+
 			if err != nil || user.Password != libs.Md5([]byte(password+user.Salt)) {
 				fmt.Println(err)
 				errorMsg = "帐号或密码错误"

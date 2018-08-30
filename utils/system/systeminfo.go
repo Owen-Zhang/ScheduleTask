@@ -16,12 +16,12 @@ type HealthInfo struct {
 
 // WorkerInfo 客户机器信息
 type WorkerInfo struct {
-	Name       			   string        `json:"name"`                   // 机器名称
+	Name       			   string        `json:"name"`                 // 机器名称
 	Ip         			   string        `json:"ip"`                   // 地址
 	Port                   string        `json:"port"`                 // 端口号
-	OsName 			       string        `json:"osname"`                 // 系统信息(windows, linux,...)
+	OsName 			       string        `json:"osname"`               // 系统信息(windows, linux,...)
 	Note       			   string        `json:"note"`                 // 说明
-	Memory                 MemoryInfo                       // 内存相关信息
+	Memory                 MemoryInfo                       		   // 内存相关信息
 }
 
 type CpuInfo struct {

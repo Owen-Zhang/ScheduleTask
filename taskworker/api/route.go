@@ -5,10 +5,13 @@ func (this *ApiServer) InitRoute() {
 	worker := this.s.Group("/worker")
 
 	//服务器心跳检查worker的运行状态
-	worker.POST("/ping", this.ping)
+	//worker.POST("/ping", this.ping)
 
 	//加入任务
 	worker.POST("/starttask", this.starttask)
+
+	//批量加入任务
+	worker.POST("/batchstarttask", this.batchstarttask)
 
 	//停止任务
 	worker.POST("stoptask", this.stoptask)

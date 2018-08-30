@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"ScheduleTask/model"
 	"database/sql"
+	"strconv"
 )
 
 //根据id获取相关的任务信息
@@ -200,6 +201,20 @@ func (this *DataStorage) UpdateStatusAndWorkerInfo(id, status int, workerInfo st
 	return err
 }
 
+// 给任务发配机器
+func (this *DataStorage) BatchUpdateTaskStatusAndWorkerInfo(ids string, status int, workerInfo string) error {
+	idtemp := fmt.Sprintf("(%s)",ids)
+	_, err := this.db.Exec("update task set status = ?, worker_info = ?  where id in ?;",  status, idtemp, workerInfo)
+	return err
+}
+
+// 根据workerinfo更新任务状态
+func (this *DataStorage) BatchUpdateTaskStatusByWorkerInfo(oldWorkerInfo, newWorkerInfo string, status int) error {
+	_, err := this.db.Exec("update task set status = ?, worker_info = ?  where worker_info = ?;",  status, oldWorkerInfo, newWorkerInfo)
+	return err
+}
+
+
 //删除任务
 func (this *DataStorage) TaskDel(id int) error {
 	_, err := this.db.Exec("update task set deleted = 1, worker_info = '' where id = ?;", id)
@@ -210,4 +225,27 @@ func (this *DataStorage) TaskDel(id int) error {
 func (this *DataStorage) UpdateTaskWorker(oldworkerid, newworkerid int) error {
 	_, err := this.db.Exec("update task set worker_id = ? where worker_id=?;",  newworkerid, oldworkerid)
 	return err
+}
+
+func (this *DataStorage) GetTaskByWorkerInfo(workerInfo string) []string {
+	rows, err := this.db.Query(
+		"SELECT id from task where ? = worker_info AND deleted = 0 AND status  = 1;", workerInfo)
+
+	if err != nil {
+		fmt.Printf("GetTaskByWorkerInfo has wrong: %s\n", err)
+		return nil
+	}
+	defer rows.Close()
+
+	var result []string
+	for rows.Next() {
+		var id int
+		err = rows.Scan(&id)
+		if err != nil {
+			fmt.Printf("Query GetTaskByWorkerInfo Scan has wrong : %s", err)
+			return nil
+		}
+		result = append(result, strconv.Itoa(id))
+	}
+	return result
 }

@@ -424,7 +424,7 @@ func (this *TaskController) Start() {
 	}
 
 	posturl := fmt.Sprintf(model.WorkerUrl, ip, port, "starttask")
-	updateerr := dataaccess.UpdateStatusAndWorkerInfo(id, 1, ip + port)
+	updateerr := dataaccess.UpdateStatusAndWorkerInfo(id, 1, fmt.Sprintf("%s_%s",ip, port))
 	if updateerr != nil {
 		result.Msg = updateerr.Error()
 		this.jsonResult(result)

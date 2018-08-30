@@ -1,13 +1,16 @@
 package healthy
 
 import (
+	"fmt"
 	"time"
 	"sort"
-	"fmt"
 	"strings"
+	"net/http"
+	"ScheduleTask/model"
+	"github.com/imroc/req"
+	"ScheduleTask/storage"
 	"ScheduleTask/utils/system"
 	"github.com/astaxie/beego/logs"
-	"ScheduleTask/storage"
 )
 
 // 对实体进行排序
@@ -76,6 +79,17 @@ func add(info *system.HealthInfo)  {
 	one := findOne(info.WorkerInfo.Ip, info.WorkerInfo.Port)
 	if one == nil {
 		Health.workerList = append(Health.workerList, info)
+		worker := &system.WorkerInfo{
+			Name:info.WorkerInfo.Name,
+			Ip:info.WorkerInfo.Ip,
+			Port:info.WorkerInfo.Port,
+			OsName:info.WorkerInfo.OsName,
+			Note: "worker正式向中心报告",
+		}
+		if err := dataAccess.AddWorkerlogs(worker, 1); err != nil {
+			logs.Error("first AddWorkerlogs has wrong: %s", err.Error())
+		}
+
 	} else {
 		one.Status = 0
 		one.TimeOut = info.TimeOut
@@ -84,7 +98,7 @@ func add(info *system.HealthInfo)  {
 
 func findOne(ip, port string) *system.HealthInfo {
 	for index, val := range Health.workerList {
-		if val.WorkerInfo.Ip == ip && val.WorkerInfo.Port == port {
+		if val.WorkerInfo.Ip == ip && val.WorkerInfo.Port == port && val.Status == 0 {
 			return Health.workerList[index]
 		}
 	}
@@ -155,5 +169,50 @@ func CheckWorkerStatus(access *storage.DataStorage) {
 
 // 转移此机器上的任务
 func transferTask(info *system.HealthInfo) {
-	fmt.Println(info.WorkerInfo.Ip, info.WorkerInfo.Port)
+	oldIp, oldPort := info.WorkerInfo.Ip, info.WorkerInfo.Port
+	workerInfo := fmt.Sprintf("%s_%s",oldIp, oldPort)
+
+	worker := &system.WorkerInfo{
+		Name:info.WorkerInfo.Name,
+		Ip:info.WorkerInfo.Ip,
+		Port:info.WorkerInfo.Port,
+		OsName:info.WorkerInfo.OsName,
+	}
+
+	newIp, newPort := FindWorker(info.WorkerInfo.OsName);
+	if newIp == "" || newPort == "" {
+		if err := dataAccess.BatchUpdateTaskStatusByWorkerInfo(workerInfo, "", 0); err != nil {
+			logs.Error("BatchUpdateTaskStatusByWorkerInfo has wrong: %s", err.Error())
+		}
+		worker.Note = fmt.Sprintf("此worker不能正常的向中心报告状态, 同时系统中又没有相同运行平台【%s】的woker, 请管理员处理", info.WorkerInfo.OsName)
+		dataAccess.AddWorkerlogs(worker, 0)
+		return
+	}
+
+	taskIds := dataAccess.GetTaskByWorkerInfo(workerInfo)
+	if taskIds == nil {
+		return
+	}
+	ids := strings.Join(taskIds, ",")
+	if errupdate := dataAccess.BatchUpdateTaskStatusAndWorkerInfo(ids, 1, workerInfo); errupdate != nil {
+		logs.Error("BatchUpdateTaskStatusAndWorkerInfo has wrong : %s", errupdate.Error())
+	}
+
+	worker.Note = fmt.Sprintf("此worker不能正常的向中心报告状态, 我们会将此worker上的任务转移到【%s】【%s】woker上", newIp, newPort)
+	dataAccess.AddWorkerlogs(worker, 0)
+
+	posturl := fmt.Sprintf(model.WorkerUrl, newIp, newPort, "batchstarttask")
+	res, err := req.Post(posturl, req.Param{"ids" : ids})
+	if err != nil || res.Response().StatusCode != http.StatusOK {
+		if err == nil {
+			logs.Error(
+				"[转移worker]通知客戶端失敗, oldIp:%s, oldPort:%s; newIp:%s, newPort:%s;", oldIp,oldPort,newIp,newPort)
+		} else {
+			logs.Error(
+				"[转移worker]通知客戶端失敗, oldIp:%s, oldPort:%s; newIp:%s, newPort:%s; error info:%s", oldIp,oldPort,newIp,newPort, err.Error())
+		}
+		if errupdate := dataAccess.BatchUpdateTaskStatusAndWorkerInfo(ids, 0, ""); errupdate != nil {
+			logs.Error("BatchUpdateTaskStatusAndWorkerInfo has wrong : %s", errupdate.Error())
+		}
+	}
 }

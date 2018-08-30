@@ -1,21 +1,21 @@
 package storage
 
-/*
 import (
-	"ScheduleTask/model"
-	"fmt"
-	"errors"
-	"database/sql"
+	//"fmt"
+	//"errors"
+	//"database/sql"
+	"ScheduleTask/utils/system"
 )
 
 //新增worker
-func (this *DataStorage) AddWorker(info *model.HealthInfo) error {
+func (this *DataStorage) AddWorkerlogs(info *system.WorkerInfo, status int) error {
 	_, err := this.db.Exec(
 		"INSERT into worker(name, url, port, systeminfo, note, status) VALUES(?,?,?,?,?,?)",
-			info.Name, info.Url, info.Port, info.SystemInfo, info.Note, info.Status)
+			info.Name, info.Ip, info.Port, info.OsName, info.Note, status)
 	return err
 }
 
+/*
 // 根据名称查询单个worker(用名字或者id查詢worker)
 func (this *DataStorage) GetOneWorker(name string, id int) (*model.HealthInfo, error) {
 	if name == "" && id == 0 {
@@ -84,5 +84,4 @@ func (this *DataStorage) GetWorkerList(status int, systeminfo string) ([]*model.
 		})
 	}
 	return result, nil
-}
-*/
+}*/

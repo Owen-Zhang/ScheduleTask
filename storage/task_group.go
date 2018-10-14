@@ -8,8 +8,8 @@ import (
 
 func (this *DataStorage) UpdateGroup(obj *model.TaskGroup) error {
 	_, err := this.db.Exec(
-		"update task_group set group_name = ?, description = ?;",
-		obj.GroupName, obj.Description)
+		"update task_group set group_name = ?, description = ? where id = ?;",
+		obj.GroupName, obj.Description, obj.Id)
 	return err
 }
 

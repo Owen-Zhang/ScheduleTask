@@ -52,12 +52,12 @@ func (this *TaskController) List() {
 				row["groupname"] = val.GroupName
 			}
 		}
-		/*
-		for _,val := range workersTemp {
-			if val.Id == v.WorkerId {
+
+		for _,worker := range healthy.Health.WorkerList {
+			if worker.Id == v.WorkerId {
 				row["workname"] = "test" //val.Name
 			}
-		}*/
+		}
 			
 		list[k] = row
 	}
@@ -193,12 +193,12 @@ func (this *TaskController) SaveTask() {
 	task.Command = strings.TrimSpace(this.GetString("command"))
 	task.Notify, _ = this.GetInt("notify")
 	task.TimeOut, _ = this.GetInt("timeout")
-	task.TaskApiMethod = ""
-	if task.TaskType == 2 {
-		task.TaskApiMethod = strings.TrimSpace(this.GetString("task_method"))
-	}
-	task.TaskApiUrl = strings.TrimSpace(this.GetString("task_url"))
+
+	task.TaskApiUrl = strings.TrimSpace(this.GetString("api_url"))
 	task.ApiHeader = strings.TrimSpace(this.GetString("api_header"))
+	task.TaskApiMethod = strings.TrimSpace(this.GetString("api_method"))
+	task.ApiBody = strings.TrimSpace(this.GetString("post_body"))
+
 	useruploadfile := strings.TrimSpace(this.GetString("old_zip_file"))
 	
 	isUploadNewFile := false

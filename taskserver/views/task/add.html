@@ -187,6 +187,13 @@
 						<i class="icon-question-sign notegreen" title="java -jar demo.jar demoApplication.class"></i>
 					</div>
 				</div>
+
+                <div class="control-group" id="api_url_parent">
+                    <label class="control-label" for="api_url">调用地址</label>
+                    <div class="controls">
+                        <input type="text" value="{{.task.TaskApiUrl}}" class="span6" id="api_url">
+                    </div>
+                </div>
 				
 				<div class="control-group" id="api_header_parent">											
 					<label class="control-label" for="api_header">头信息(header)</label>
@@ -194,13 +201,6 @@
 					<div class="controls">
 						<textarea class="span6" id="api_header" rows="6">{{.task.ApiHeader}}</textarea>
 					</div>
-				</div>
-				
-				<div class="control-group" id="api_url_parent">											
-					<label class="control-label" for="api_url">调用地址</label>
-					<div class="controls">
-						<input type="text" value="{{.task.TaskApiUrl}}" class="span6" id="api_url">
-					</div>				
 				</div>
 				
 				<div class="control-group" id="api_method_parent">											
@@ -297,8 +297,8 @@ $(function () {
 	
 	var taskId = {{.task.Id}}
 	if (taskId > 0) {
-		$("#task_type").attr("disabled", true)
-		$("#system").attr("disabled", true)
+		$("#task_type").attr("disabled", true);
+		$("#system").attr("disabled", true);
 	}
 	
 	if ({{.task.OldZipFile}} && {{.task.OldZipFile}} != "") {
@@ -468,7 +468,7 @@ function ShowHideContent(task_type) {
 		$("#file_parent").show();
 	} else {
 		ApiIsShow(true);
-		$("#command_parent").show();	
+		$("#command_parent").hide();
 		$("#file_parent").hide();
 	}
 }

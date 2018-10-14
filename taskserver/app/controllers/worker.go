@@ -1,6 +1,5 @@
 package controllers
 
-/*
 import (
 	"ScheduleTask/model"
 	"strings"
@@ -47,4 +46,3 @@ func (this *WorkerController) SaveWork() {
 	}
 	this.ajaxMsg("", MSG_OK)
 }
-*/

@@ -74,7 +74,7 @@
 				<tr>
 					<td><input type="checkbox" name="ids" value="{{$v.id}}" /></td>
 					<!--<td class="center">{{$v.id}}</td>-->
-					<td class="task_status">{{if eq $v.status 0}}<span class="color-red">停用中</span>{{else}}<span class="color-gree">启用中</span>{{end}}</td>
+					<!--<td class="task_status">{{if eq $v.status 0}}<span class="color-red">未分配</span>{{else}}<span class="color-gree"></span>{{end}}</td> -->
 					<td class="run_status">
 						{{if eq $v.status 0}}
 						<span class="color-red">未运行</span>

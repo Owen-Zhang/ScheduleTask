@@ -11,17 +11,17 @@ import (
 func (this *DataStorage) GetTaskById(idinput int) (*model.TaskExend, error) {
 	sqltext := `SELECT id, user_id, group_id, task_name, task_type, description, cron_spec, run_file_folder,
 			old_zip_file, concurrent, task_api_url, task_api_method, api_header, command, status, notify, notify_email, time_out, execute_times,
-			prev_time, create_time, version, zip_file_path, worker_info from task where deleted = 0 and id=?;`
+			prev_time, create_time, version, zip_file_path, worker_key from task where deleted = 0 and id=?;`
 
 	row := this.db.QueryRow(sqltext, idinput)
 
-	var task_name,description, cron_spec, run_file_folder, old_zip_file, apiurl, apimethod, api_header, command, notify_email, zip_file_path, worker_info string
+	var task_name,description, cron_spec, run_file_folder, old_zip_file, apiurl, apimethod, api_header, command, notify_email, zip_file_path, worker_key string
 	var id, user_id, group_id,task_type, concurrent, status, notify, timeout, execute_times, version int
 	var create_time, prev_time int64
 
 	if er := row.Scan(&id, &user_id, &group_id, &task_name, &task_type, &description, &cron_spec, &run_file_folder,
 		&old_zip_file, &concurrent, &apiurl, &apimethod, &api_header, &command, &status, &notify, &notify_email, &timeout, &execute_times,
-		&prev_time, &create_time, &version, &zip_file_path, &worker_info); er != nil {
+		&prev_time, &create_time, &version, &zip_file_path, &worker_key); er != nil {
 
 		if er == sql.ErrNoRows {
 			return nil, nil
@@ -49,7 +49,7 @@ func (this *DataStorage) GetTaskById(idinput int) (*model.TaskExend, error) {
 			TimeOut			: timeout,
 			Version			: version,
 			ZipFilePath		: zip_file_path,
-			WorkerInfo      : worker_info,
+			WorkerKey       : worker_key,
 		},
 		UserId		: user_id,
 		GroupId		: group_id,
@@ -78,10 +78,10 @@ func (this *DataStorage) UpdateFrontTask(task *model.TaskExend) error {
 	if _, err := this.db.Exec(
 		`update task set group_id = ?, task_name = ?, task_type = ?, description = ?, cron_spec = ?,
 				old_zip_file = ?, concurrent = ?, task_api_url = ?, task_api_method = ?, api_header = ?, command = ?, notify = ?, notify_email = ?, time_out = ?,
-				version = ?, zip_file_path = ?, run_file_folder = ?, worker_info = ?  where id = ?`,
+				version = ?, zip_file_path = ?, run_file_folder = ? where id = ?`,
 		task.GroupId, task.Name, task.TaskType, task.Description, task.CronSpec,
 		task.OldZipFile, task.Concurrent, task.TaskApiUrl, task.TaskApiMethod, task.ApiHeader, task.Command, task.Notify, task.NotifyEmail, task.TimeOut,
-		task.Version, task.ZipFilePath, task.RunFileFolder, task.WorkerInfo, task.Id); err != nil {
+		task.Version, task.ZipFilePath, task.RunFileFolder, task.Id); err != nil {
 			return err
 	}
 	return nil
@@ -92,11 +92,11 @@ func (this *DataStorage) TaskAdd(task *model.TaskExend) (error) {
 	if _, err := this.db.Exec(
 		`INSERT into task(user_id, group_id, system, task_name, task_type, description, cron_spec, run_file_folder,
 								old_zip_file, concurrent, task_api_url, task_api_method, api_header, api_body, command, status, notify, notify_email, time_out, execute_times,
-							    prev_time, create_time, version, deleted, zip_file_path, worker_info)
-				VALUES(?,?,?,?,?,?,?,?,  ?,?,?,?,?,?,?,0,?,?,?,0,  ?,?,?,0,?,?)`,
+							    prev_time, create_time, version, deleted, zip_file_path)
+				VALUES(?,?,?,?,?,?,?,?,  ?,?,?,?,?,?,?,0,?,?,?,0,  ?,?,?,0,?)`,
 		task.UserId, task.GroupId, task.System, task.Name, task.TaskType, task.Description, task.CronSpec, task.RunFileFolder,
 		task.OldZipFile, task.Concurrent, task.TaskApiUrl, task.TaskApiMethod, task.ApiHeader, task.ApiBody, task.Command, task.Notify, task.NotifyEmail, task.TimeOut,
-		task.PrevTime,task.CreateTime,task.Version, task.ZipFilePath, task.WorkerInfo); err != nil {
+		task.PrevTime,task.CreateTime,task.Version, task.ZipFilePath); err != nil {
 			return err
 	}
 
@@ -104,7 +104,7 @@ func (this *DataStorage) TaskAdd(task *model.TaskExend) (error) {
 }
 
 //status -1为全部，其它为数据库正常状态; groupid: 0表示全部，其它表示正常分组下的, workerid:0表示全部，其它表示当个机器编号
-func (this *DataStorage) TaskGetList(page, pageSize, status, groupid int, workerInfo string) ([]*model.TaskExend, int) {
+func (this *DataStorage) TaskGetList(page, pageSize, status, groupid int, worker_key string) ([]*model.TaskExend, int) {
 
 	total := this.taskGetListCount(status, groupid)
 	if total <= 0 {
@@ -119,10 +119,10 @@ func (this *DataStorage) TaskGetList(page, pageSize, status, groupid int, worker
 		from task
 		where (? =-1 or ? = status) AND
 			  (? = 0 or ? = group_id) AND
-			  (? ='' or ? = worker_info) AND
+			  (? ='' or ? = worker_key) AND
               deleted = 0
 		order by id ASC
-		LIMIT ?, ?;`, status, status, groupid, groupid, workerInfo, workerInfo, (page - 1)*pageSize, pageSize)
+		LIMIT ?, ?;`, status, status, groupid, groupid, worker_key, worker_key, (page - 1)*pageSize, pageSize)
 
 	if err != nil {
 		fmt.Printf("TaskGetList has wrong: %s\n", err)
@@ -133,11 +133,11 @@ func (this *DataStorage) TaskGetList(page, pageSize, status, groupid int, worker
 	var result []*model.TaskExend
 	for rows.Next() {
 
-		var system,task_name,description, cron_spec, run_file_folder, old_zip_file, command, notify_email, zip_file_path, worker_info string
+		var system,task_name,description, cron_spec, run_file_folder, old_zip_file, command, notify_email, zip_file_path, worker_key string
 		var id, user_id, group_id, task_type, concurrent, status, notify, timeout, execute_times, version int
 		var create_time, prev_time int64
 
-		if er := rows.Scan(&id, &user_id, &group_id, &system, &worker_info, &task_name, &task_type, &description, &cron_spec, &run_file_folder,
+		if er := rows.Scan(&id, &user_id, &group_id, &system, &worker_key, &task_name, &task_type, &description, &cron_spec, &run_file_folder,
 			&old_zip_file, &concurrent, &command, &status, &notify, &notify_email, &timeout, &execute_times,
 			&prev_time, &create_time, &version, &zip_file_path); er != nil {
 
@@ -160,7 +160,7 @@ func (this *DataStorage) TaskGetList(page, pageSize, status, groupid int, worker
 				TimeOut		 : timeout,
 				Version		 : version,
 				ZipFilePath	 : zip_file_path,
-				WorkerInfo   : worker_info,
+				WorkerKey    : worker_key,
 			},
 			UserId		: user_id,
 			GroupId		: group_id,

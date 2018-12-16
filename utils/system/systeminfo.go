@@ -16,6 +16,7 @@ type HealthInfo struct {
 
 // WorkerInfo 客户机器信息
 type WorkerInfo struct {
+	WorkerKey              string        `json:"workerkey"`            //服务端生成的worker标识
 	Name       			   string        `json:"name"`                 // 机器名称
 	Ip         			   string        `json:"ip"`                   // 地址
 	Port                   string        `json:"port"`                 // 端口号

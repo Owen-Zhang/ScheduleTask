@@ -3,20 +3,18 @@ package storage
 import (
 	"fmt"
 	"errors"
-	//"database/sql"
+	"database/sql"
 	"ScheduleTask/model"
 	"ScheduleTask/utils/system"
-	"time"
 )
 
-//新增worker
+// 保存worker的心跳日志
 func (this *DataStorage) AddWorkerlogs(info *system.WorkerInfo, status int) error {
 	_, err := this.db.Exec(
-		"INSERT into worker(name, url, port, systeminfo, note, status) VALUES(?,?,?,?,?,?)",
-			info.Name, info.Ip, info.Port, info.OsName, info.Note, status)
+		"INSERT into worker_log(name, key, ip, port, osname, Note, status) VALUES(?,?,?,?,?,?,?)",
+		info.Name, info.WorkerKey, info.Ip, info.Port, info.OsName, info.Note, status)
 	return err
 }
-
 // 新增worker
 func (this *DataStorage) NewWorker(obj *model.Worker) error {
 	_, err := this.db.Exec(
@@ -32,36 +30,6 @@ func (this *DataStorage) UpdateWorkerInfo(obj *model.Worker) error {
 		obj.Name, obj.Note, )
 	return err
 }
-
-// 获取单个worker信息
-func (this *DataStorage) WorkerGetById(idT int) (*model.Worker, error) {
-
-	var id int
-	var name, key, note string
-	var status int8
-
-	onerow :=
-		this.db.QueryRow(
-			`SELECT
-						id, name, key, note, status
-					from worker
-					where id = ?
-					LIMIT 1;`, idT).Scan(&id, &name, &key, &note, &status)
-
-	if onerow != nil {
-		return nil, onerow
-	}
-
-	result := &model.Worker{
-		Id 			: id,
-		Name		: name,
-		Key			: key,
-		Note		: note,
-		Status		: status,
-	}
-	return result, nil
-}
-
 
 //删除worker
 func (this *DataStorage) DeleteWorker(id int) error  {
@@ -102,9 +70,8 @@ func (this *DataStorage) WorkerGetList(page, pageSize int) ([]*model.Worker, int
 	var result []*model.Worker
 	for rows.Next() {
 
-		var id int
+		var id, status int
 		var name, key, note string
-		var status int8
 
 		if er := rows.Scan(&id, &name, &key, &note, &status); er != nil {
 			fmt.Printf("Query WorkerGetList has wrong : %s", er)
@@ -137,8 +104,7 @@ func (this *DataStorage) GetWorkerList(status int, systeminfo string) ([]*model.
 
 	var result []*model.Worker
 	for rows.Next() {
-		var id int
-		var status int8
+		var id,status int
 		var name, key, note string
 		if er := rows.Scan(&id, &name, &key, &note, &status); er != nil {
 			fmt.Printf("Query GetWorkerList has wrong : %s", er)
@@ -154,31 +120,28 @@ func (this *DataStorage) GetWorkerList(status int, systeminfo string) ([]*model.
 	return result, nil
 }
 
-/*
+
 // 根据名称查询单个worker(用名字或者id查詢worker)
 func (this *DataStorage) GetOneWorker(name string, id int) (*model.Worker, error) {
 	if name == "" && id == 0 {
 		return nil, errors.New("one of name or id must has values")
 	}
 
-	var nameT, url, systeminfo string
-	var idT, port, status int
+	var nameT, key string
+	var idT, status int
 
-	row := this.db.QueryRow("SELECT id, name, url, port, systeminfo, status from worker where (? = '' or name = ?) and (? = 0 or ? = id) limit 1;", name,name,id,id)
-	if er := row.Scan(&idT, &nameT, &url, &port, &systeminfo, &status); er != nil {
+	row := this.db.QueryRow("SELECT id, name, key, status from worker where (? = '' or name = ?) and (? = 0 or ? = id) limit 1;", name,name,id,id)
+	if er := row.Scan(&idT, &nameT, &key, &status); er != nil {
 		if er == sql.ErrNoRows {
 			return nil, nil
 		}
 		return nil, er
 	}
 
-	return &model.HealthInfo{
+	return &model.Worker{
 		Id			: idT,
 		Name		: nameT,
-		Url			: url,
-		Port		: port,
-		SystemInfo	: systeminfo,
+		Key			: key,
 		Status		: status,
 	}, nil
 }
-*/

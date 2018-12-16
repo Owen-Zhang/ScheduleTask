@@ -54,8 +54,9 @@ func (this *TaskController) List() {
 		}
 
 		for _,worker := range healthy.Health.WorkerList {
-			if worker.Id == v.WorkerId {
-				row["workname"] = "test" //val.Name
+			if worker.WorkerInfo.WorkerKey == v.WorkerKey {
+				//将名称给前端
+				row["workname"] = "test"
 			}
 		}
 			
@@ -485,6 +486,7 @@ func (this *TaskController) Run()  {
 		this.jsonResult(result)
 	}
 
+	//从当前的worker库中查找合适的worker
 	tempworker := strings.Split(task.WorkerInfo, "_")
 	posturl := fmt.Sprintf(model.WorkerUrl, tempworker[0], tempworker[1], "runtask")
 	res, err := req.Post(posturl, req.Param{"id": id})

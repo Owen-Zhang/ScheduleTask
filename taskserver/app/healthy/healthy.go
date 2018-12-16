@@ -54,6 +54,7 @@ func Input(info *system.HealthInfo) {
 		TimeOut:time.Now().Add(3 * time.Minute),//.In(Health.timeLocation),
 		WorkerInfo:system.WorkerInfo{
 			Name:info.WorkerInfo.Name,
+			WorkerKey:info.WorkerInfo.WorkerKey,
 			Ip: info.WorkerInfo.Ip,
 			Port:info.WorkerInfo.Port,
 			OsName:info.WorkerInfo.OsName,
@@ -81,6 +82,7 @@ func add(info *system.HealthInfo)  {
 		Health.WorkerList = append(Health.WorkerList, info)
 		worker := &system.WorkerInfo{
 			Name:info.WorkerInfo.Name,
+			WorkerKey:info.WorkerInfo.WorkerKey,
 			Ip:info.WorkerInfo.Ip,
 			Port:info.WorkerInfo.Port,
 			OsName:info.WorkerInfo.OsName,

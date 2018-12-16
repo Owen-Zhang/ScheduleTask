@@ -1,11 +1,23 @@
 CREATE TABLE `worker` (
   `id`          int(11) unsigned NOT NULL AUTO_INCREMENT,
   `name`        varchar(50)      NOT NULL DEFAULT '' COMMENT '机器名称',
-  `url`         varchar(100)     NOT NULL DEFAULT '' COMMENT '地址',
-  `port`        int(11)          NOT NULL DEFAULT '0'COMMENT '端口',
-  `systeminfo`  varchar(50)      NOT NULL DEFAULT '' COMMENT '系统信息(windows, linux,...)',
+  `key`         varchar(200)     NOT NULL DEFAULT '' COMMENT 'worker标识符',
   `note`        varchar(500)     NOT NULL DEFAULT '' COMMENT '说明',
   `status`      int(11)          NOT NULL DEFAULT '0'COMMENT 'worker的状态',
+
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+CREATE TABLE `worker_log` (
+  `id`          int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `name`        varchar(50)      NOT NULL DEFAULT '' COMMENT '机器名称',
+  `key`         varchar(200)     NOT NULL DEFAULT '' COMMENT 'worker标识符',
+  `ip`          varchar(30)      NOT NULL DEFAULT '' COMMENT 'worker ip地址',
+  `port`        int(11)          NOT NULL DEFAULT '0' COMMENT 'worker的端口',
+  `osname`      varchar(50)      NOT NULL DEFAULT '' COMMENT 'worker系统名(windows,linux)',
+  `note`        varchar(500)     NOT NULL DEFAULT '' COMMENT '说明',
+  `status`      int(11)          NOT NULL DEFAULT '0' COMMENT '状态, 0正常，1失败(服务中心在标识)',
 
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -37,7 +49,7 @@ CREATE TABLE `task` (
   `version` int(11) unsigned NOT NULL DEFAULT 0 COMMENT '版本号',
   `zip_file_path` VARCHAR(300) NOT NULL DEFAULT '' COMMENT 'zip获取地址(我们上传到文件服务器生成的文件名)',
   `deleted` int(11) unsigned NOT NULL DEFAULT  0 COMMENT '是否删除,1表示删除,0表示正常',
-  `worker_info` varchar(60) NOT NULL DEFAULT '' COMMENT '客户端编号ip_port',
+  `worker_key` varchar(100) NOT NULL DEFAULT '' COMMENT 'worker key(标识此任务由谁在运行)',
   PRIMARY KEY (`id`),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_group_id` (`group_id`)

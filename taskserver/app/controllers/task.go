@@ -16,8 +16,8 @@ import (
 	"ScheduleTask/utils/system"
 	"github.com/Owen-Zhang/cron"
 	"ScheduleTask/taskserver/app/libs"
-	"ScheduleTask/taskserver/app/models/response"
 	"ScheduleTask/taskserver/app/healthy"
+	"ScheduleTask/taskserver/app/models/response"
 )
 
 type TaskController struct {
@@ -44,20 +44,18 @@ func (this *TaskController) List() {
 		row["status"] = v.Status
 		row["description"] = v.Description
 		row["tasktype"] = v.TaskType
+
 		row["groupname"] = ""
-		row["workname"] = ""
-		
 		for _,val := range groups {
 			if val.Id == v.GroupId {
 				row["groupname"] = val.GroupName
 			}
 		}
 
-		for _,worker := range healthy.Health.WorkerList {
-			if worker.WorkerInfo.WorkerKey == v.WorkerKey {
-				//将名称给前端
-				row["workname"] = "test"
-			}
+		row["workname"] = "未分配";
+		ip, port := healthy.FindWorkerByWorkerKey(v.WorkerKey)
+		if (ip != "" && port != "") {
+			row["workname"] = fmt.Sprintf("%s:%s", ip, port)
 		}
 			
 		list[k] = row
@@ -418,14 +416,14 @@ func (this *TaskController) Start() {
 	}
 
 	//查找worker，分配任务
-	ip, port := healthy.FindWorker(task.System)
-	if ip == "" || port == "" {
+	ip, port, worker_key := healthy.FindWorker(task.System)
+	if ip == "" || port == "" || worker_key == "" {
 		result.Msg = fmt.Sprintf("没有找到当前可运行的worker[%s]", task.System)
 		this.jsonResult(result)
 	}
 
 	posturl := fmt.Sprintf(model.WorkerUrl, ip, port, "starttask")
-	updateerr := dataaccess.UpdateStatusAndWorkerInfo(id, 1, fmt.Sprintf("%s_%s",ip, port))
+	updateerr := dataaccess.UpdateStatusAndWorkerInfo(id, 1, worker_key)
 	if updateerr != nil {
 		result.Msg = updateerr.Error()
 		this.jsonResult(result)
@@ -441,7 +439,6 @@ func (this *TaskController) Start() {
 		}
 		//将状态改回去
 		dataaccess.UpdateStatusAndWorkerInfo(id, 0, "")
-
 		this.jsonResult(result)
 	}
 
@@ -480,15 +477,19 @@ func (this *TaskController) Run()  {
 		this.jsonResult(result)
 	}
 
-	//这里可以分成两个动作，先start再run，后台统一去作处理, 这两个动作可以一起支行
 	if task.Status != 1 {
 		result.Msg = "请先开始任务再运行"
 		this.jsonResult(result)
 	}
 
 	//从当前的worker库中查找合适的worker
-	tempworker := strings.Split(task.WorkerInfo, "_")
-	posturl := fmt.Sprintf(model.WorkerUrl, tempworker[0], tempworker[1], "runtask")
+	ip, port := healthy.FindWorkerByWorkerKey(task.WorkerKey)
+	if ip == "" || port == "" {
+		result.Msg = fmt.Sprintf("当前运行的worker[%s:%s]不能正常向中心报告机器状态,此时不能完成你的运行命令", ip,port)
+		this.jsonResult(result)
+	}
+
+	posturl := fmt.Sprintf(model.WorkerUrl, ip, port, "runtask")
 	res, err := req.Post(posturl, req.Param{"id": id})
 	if err != nil || res.Response().StatusCode != http.StatusOK {
 		result.Msg = err.Error()
@@ -533,8 +534,13 @@ func (this *TaskController) Pause() {
 		this.jsonResult(result)
 	}
 
-	tempworker := strings.Split(task.WorkerInfo, "_")
-	posturl := fmt.Sprintf(model.WorkerUrl, tempworker[0], tempworker[1], "stoptask")
+	ip, port := healthy.FindWorkerByWorkerKey(task.WorkerKey)
+	if ip == "" || port == "" {
+		result.Msg = fmt.Sprintf("当前运行的worker[%s:%s]不能正常向中心报告机器状态,此时不能完成你的运行命令", ip,port)
+		this.jsonResult(result)
+	}
+
+	posturl := fmt.Sprintf(model.WorkerUrl, ip, port, "stoptask")
 	res, err := req.Post(posturl, req.Param{"id": id})
 	if err != nil || res.Response().StatusCode != http.StatusOK {
 		result.Msg = err.Error()
@@ -584,8 +590,12 @@ func (this *TaskController) Delete() {
 		this.jsonResult(result)
 	}
 
-	tempworker := strings.Split(task.WorkerInfo, "_")
-	posturl := fmt.Sprintf(model.WorkerUrl, tempworker[0], tempworker[1], "deletetask")
+	ip, port := healthy.FindWorkerByWorkerKey(task.WorkerKey)
+	if ip == "" || port == "" {
+		result.Msg = fmt.Sprintf("当前运行的worker[%s:%s]不能正常向中心报告机器状态,此时不能完成你的运行命令", ip,port)
+		this.jsonResult(result)
+	}
+	posturl := fmt.Sprintf(model.WorkerUrl, ip, port, "deletetask")
 	res, err := req.Post(posturl, req.Param{"id": id})
 	if err != nil || res.Response().StatusCode != http.StatusOK {
 		result.Msg = err.Error()

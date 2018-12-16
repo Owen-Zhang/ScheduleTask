@@ -196,21 +196,21 @@ func (this *DataStorage) TaskUpdateStatus(id, status int) error {
 }
 
 // 给任务发配机器
-func (this *DataStorage) UpdateStatusAndWorkerInfo(id, status int, workerInfo string) error {
-	_, err := this.db.Exec("update task set status = ?, worker_info = ?  where id=?;",  status, id, workerInfo)
+func (this *DataStorage) UpdateStatusAndWorkerInfo(id, status int, worker_key string) error {
+	_, err := this.db.Exec("update task set status = ?, worker_key = ?  where id=?;",  status, id, worker_key)
 	return err
 }
 
 // 给任务发配机器
-func (this *DataStorage) BatchUpdateTaskStatusAndWorkerInfo(ids string, status int, workerInfo string) error {
+func (this *DataStorage) BatchUpdateTaskStatusAndWorkerInfo(ids string, status int, worker_key string) error {
 	idtemp := fmt.Sprintf("(%s)",ids)
-	_, err := this.db.Exec("update task set status = ?, worker_info = ?  where id in ?;",  status, idtemp, workerInfo)
+	_, err := this.db.Exec("update task set status = ?, worker_key = ?  where id in ?;",  status, idtemp, worker_key)
 	return err
 }
 
-// 根据workerinfo更新任务状态
-func (this *DataStorage) BatchUpdateTaskStatusByWorkerInfo(oldWorkerInfo, newWorkerInfo string, status int) error {
-	_, err := this.db.Exec("update task set status = ?, worker_info = ?  where worker_info = ?;",  status, oldWorkerInfo, newWorkerInfo)
+// 根据worker_key更新任务状态
+func (this *DataStorage) BatchUpdateTaskStatusByWorkerKey(oldWorkerKey, newWorkerKey string, status int) error {
+	_, err := this.db.Exec("update task set status = ?, worker_key = ?  where worker_key = ?;",  status, newWorkerKey, oldWorkerKey)
 	return err
 }
 
@@ -227,12 +227,12 @@ func (this *DataStorage) UpdateTaskWorker(oldworkerid, newworkerid int) error {
 	return err
 }
 
-func (this *DataStorage) GetTaskByWorkerInfo(workerInfo string) []string {
+func (this *DataStorage) GetTaskByWorkerKey(workerKey string) []string {
 	rows, err := this.db.Query(
-		"SELECT id from task where ? = worker_info AND deleted = 0 AND status  = 1;", workerInfo)
+		"SELECT id from task where ? = worker_key AND deleted = 0 AND status  = 1;", workerKey)
 
 	if err != nil {
-		fmt.Printf("GetTaskByWorkerInfo has wrong: %s\n", err)
+		fmt.Printf("GetTaskByWorkerKey has wrong: %s\n", err)
 		return nil
 	}
 	defer rows.Close()
@@ -242,7 +242,7 @@ func (this *DataStorage) GetTaskByWorkerInfo(workerInfo string) []string {
 		var id int
 		err = rows.Scan(&id)
 		if err != nil {
-			fmt.Printf("Query GetTaskByWorkerInfo Scan has wrong : %s", err)
+			fmt.Printf("Query GetTaskByWorkerKeyInfo Scan has wrong : %s", err)
 			return nil
 		}
 		result = append(result, strconv.Itoa(id))

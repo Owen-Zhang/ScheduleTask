@@ -64,12 +64,25 @@ func Input(info *system.HealthInfo) {
 }
 
 // FindWorker 通过运行平台查找worker机器,返回ip, port信息
-func FindWorker(system string) (string, string) {
+func FindWorker(system string) (string, string, string) {
 	for _,val := range Health.WorkerList {
 		if val.Status == -1 {
 			continue;
 		}
 		if strings.EqualFold(val.WorkerInfo.OsName, system) {
+			return val.WorkerInfo.Ip, val.WorkerInfo.Port, val.WorkerInfo.WorkerKey
+		}
+	}
+	return "","",""
+}
+
+// FindWorker 通过运行平台查找worker机器,返回ip, port信息
+func FindWorkerByWorkerKey(worker_key string) (string, string) {
+	for _,val := range Health.WorkerList {
+		if val.Status == -1 {
+			continue;
+		}
+		if strings.EqualFold(val.WorkerInfo.WorkerKey, worker_key) {
 			return val.WorkerInfo.Ip, val.WorkerInfo.Port
 		}
 	}
@@ -172,35 +185,35 @@ func CheckWorkerStatus(access *storage.DataStorage) {
 // 转移此机器上的任务
 func transferTask(info *system.HealthInfo) {
 	oldIp, oldPort := info.WorkerInfo.Ip, info.WorkerInfo.Port
-	workerInfo := fmt.Sprintf("%s_%s",oldIp, oldPort)
-
 	worker := &system.WorkerInfo{
 		Name:info.WorkerInfo.Name,
+		WorkerKey:info.WorkerInfo.WorkerKey,
 		Ip:info.WorkerInfo.Ip,
 		Port:info.WorkerInfo.Port,
 		OsName:info.WorkerInfo.OsName,
+		Note:info.WorkerInfo.Note,
 	}
 
-	newIp, newPort := FindWorker(info.WorkerInfo.OsName);
+	newIp, newPort, newWorkerkey := FindWorker(info.WorkerInfo.OsName);
 	if newIp == "" || newPort == "" {
-		if err := dataAccess.BatchUpdateTaskStatusByWorkerInfo(workerInfo, "", 0); err != nil {
-			logs.Error("BatchUpdateTaskStatusByWorkerInfo has wrong: %s", err.Error())
+		if err := dataAccess.BatchUpdateTaskStatusByWorkerKey(info.WorkerInfo.WorkerKey, "", 0); err != nil {
+			logs.Error("BatchUpdateTaskStatusByWorkerKey has wrong: %s", err.Error())
 		}
 		worker.Note = fmt.Sprintf("此worker不能正常的向中心报告状态, 同时系统中又没有相同运行平台【%s】的woker, 请管理员处理", info.WorkerInfo.OsName)
 		dataAccess.AddWorkerlogs(worker, 0)
 		return
 	}
 
-	taskIds := dataAccess.GetTaskByWorkerInfo(workerInfo)
+	taskIds := dataAccess.GetTaskByWorkerKey(info.WorkerInfo.WorkerKey)
 	if taskIds == nil {
 		return
 	}
 	ids := strings.Join(taskIds, ",")
-	if errupdate := dataAccess.BatchUpdateTaskStatusAndWorkerInfo(ids, 1, workerInfo); errupdate != nil {
+	if errupdate := dataAccess.BatchUpdateTaskStatusByWorkerKey(info.WorkerInfo.WorkerKey, newWorkerkey, 1); errupdate != nil {
 		logs.Error("BatchUpdateTaskStatusAndWorkerInfo has wrong : %s", errupdate.Error())
 	}
 
-	worker.Note = fmt.Sprintf("此worker不能正常的向中心报告状态, 我们会将此worker上的任务转移到【%s】【%s】woker上", newIp, newPort)
+	worker.Note = fmt.Sprintf("此worker不能正常的向中心报告状态, 我们会将此worker上的任务转移到【%s:%s】woker上", newIp, newPort)
 	dataAccess.AddWorkerlogs(worker, 0)
 
 	posturl := fmt.Sprintf(model.WorkerUrl, newIp, newPort, "batchstarttask")

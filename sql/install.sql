@@ -3,7 +3,7 @@ CREATE TABLE `worker` (
   `name`        varchar(50)      NOT NULL DEFAULT '' COMMENT '机器名称',
   `key`         varchar(200)     NOT NULL DEFAULT '' COMMENT 'worker标识符',
   `note`        varchar(500)     NOT NULL DEFAULT '' COMMENT '说明',
-  `status`      int(11)          NOT NULL DEFAULT '0'COMMENT 'worker的状态',
+  `status`      int(11)          NOT NULL DEFAULT '0'COMMENT 'worker的状态, 0未分配机器, 1已分配机器, 2禁用',
 
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

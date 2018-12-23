@@ -20,6 +20,7 @@ type Configuration struct {
 	} `yaml:"storage,omitempty"`
 
 	ApiServer struct {
+		Key  string `yaml:"key,omitempty"`
 		Ip   string `yaml:"ip,omitempty"`
 		Bind string `yaml:"bind,omitempty"`
 		Note string `yaml:"note,omitempty"`
@@ -80,10 +81,12 @@ func makeDefault() *Configuration {
 		},
 
 		ApiServer: struct {
+			Key  string `yaml:"key,omitempty"`
 			Ip   string `yaml:"ip,omitempty"`
 			Bind string `yaml:"bind,omitempty"`
 			Note string `yaml:"note,omitempty"`
 		}{
+			Key : "",
 			Ip  : "192.168.0.103",
 			Bind: ":8985",
 			Note: "worker机器相关说明",
@@ -138,6 +141,7 @@ func GetStorageArg() *storage.DataStorageArgs {
 func GetApiServerArg() *api.ApiServerArg {
 	if configuration != nil {
 		return &api.ApiServerArg{
+			Key : configuration.ApiServer.Key,
 			Ip  : configuration.ApiServer.Ip,
 			Bind: configuration.ApiServer.Bind,
 			Note: configuration.ApiServer.Note,

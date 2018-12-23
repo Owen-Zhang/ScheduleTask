@@ -48,17 +48,17 @@ func init()  {
 }
 
 // 将报告数据加入到通道中
-func Input(info *system.HealthInfo) {
+func Input(info *system.WorkerInfo) {
 	Health.add <- &system.HealthInfo{
 		Status: 0,
 		TimeOut:time.Now().Add(3 * time.Minute),//.In(Health.timeLocation),
 		WorkerInfo:system.WorkerInfo{
-			Name:info.WorkerInfo.Name,
-			WorkerKey:info.WorkerInfo.WorkerKey,
-			Ip: info.WorkerInfo.Ip,
-			Port:info.WorkerInfo.Port,
-			OsName:info.WorkerInfo.OsName,
-			Note:info.WorkerInfo.Note,
+			//Name:info.Name,
+			WorkerKey:info.WorkerKey,
+			Ip: info.Ip,
+			Port:info.Port,
+			OsName:info.OsName,
+			Note:info.Note,
 		},
 	}
 }

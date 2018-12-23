@@ -21,6 +21,7 @@ func Heartbeat() {
 			workerApiConfig := etc.GetApiServerArg()
 
 			worker := system.SystemInfo
+			worker.WorkerKey = workerApiConfig.Key
 			worker.Ip = workerApiConfig.Ip
 			worker.Port = string([]rune(strings.TrimSpace(workerApiConfig.Bind))[1:])
 			worker.Note = workerApiConfig.Note

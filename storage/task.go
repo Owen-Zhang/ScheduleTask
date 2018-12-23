@@ -2,9 +2,10 @@ package storage
 
 import (
 	"fmt"
-	"ScheduleTask/model"
-	"database/sql"
 	"strconv"
+	"database/sql"
+	"ScheduleTask/model"
+	"github.com/astaxie/beego/logs"
 )
 
 //根据id获取相关的任务信息
@@ -113,7 +114,7 @@ func (this *DataStorage) TaskGetList(page, pageSize, status, groupid int, worker
 
 	rows, err := this.db.Query(
 		`SELECT
-			id, user_id, group_id, system, worker_info, task_name, task_type, description, cron_spec, run_file_folder,
+			id, user_id, group_id, system, worker_key, task_name, task_type, description, cron_spec, run_file_folder,
 			old_zip_file, concurrent, command, status, notify, notify_email, time_out, execute_times,
 			prev_time, create_time, version, zip_file_path
 		from task
@@ -125,7 +126,7 @@ func (this *DataStorage) TaskGetList(page, pageSize, status, groupid int, worker
 		LIMIT ?, ?;`, status, status, groupid, groupid, worker_key, worker_key, (page - 1)*pageSize, pageSize)
 
 	if err != nil {
-		fmt.Printf("TaskGetList has wrong: %s\n", err)
+		logs.Error("TaskGetList has wrong: %s\n", err)
 		return nil, 0
 	}
 	defer rows.Close()
@@ -142,7 +143,7 @@ func (this *DataStorage) TaskGetList(page, pageSize, status, groupid int, worker
 			&prev_time, &create_time, &version, &zip_file_path); er != nil {
 
 			return nil, 0
-			fmt.Printf("Query TaskGetList has wrong : %s", er)
+			logs.Error("Query TaskGetList has wrong : %s", er)
 		}
 		result = append(result, &model.TaskExend{
 			Task:model.Task {
@@ -217,7 +218,7 @@ func (this *DataStorage) BatchUpdateTaskStatusByWorkerKey(oldWorkerKey, newWorke
 
 //删除任务
 func (this *DataStorage) TaskDel(id int) error {
-	_, err := this.db.Exec("update task set deleted = 1, worker_info = '' where id = ?;", id)
+	_, err := this.db.Exec("update task set deleted = 1, worker_key = '' where id = ?;", id)
 	return err
 }
 

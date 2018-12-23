@@ -9,8 +9,6 @@ import (
 	_"ScheduleTask/taskworker/etc"
 )
 
-//可以改为客户端报告，带上相应的客户端信息,让服务端去检查客户端的机子状态,以及分配相应的任务
-
 func main() {
 
 	logs.SetLogger(logs.AdapterFile,`{"filename":"worker.log"}`)

@@ -33,11 +33,11 @@
                         <tr>
                             <th width="20"><input type="checkbox" name="chkall" value="1"></td>
                             <th width="40">ID</th>
-                            <th>worker名称</th>
-                            <th>状态</th>
-                            <th>IP地址</th>
-                            <th>端口</th>
-                            <th>系统说明</th>
+                            <th width="100">名称</th>
+                            <th width="280">标识</th>
+                            <th width="60">状态</th>
+                            <th>说明</th>
+                            <th width="60">操作</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -46,10 +46,14 @@
                             <td><input type="checkbox" name="ids" value="{{$v.Id}}" /></td>
                             <td class="center">{{$v.Id}}</td>
                             <td>{{$v.Name}}</td>
-                            <td>{{if eq $v.Status 1}} 工作中 {{else}} 休息中 {{end}}</td>
-                            <td>{{$v.Url}}</td>
-                            <td>{{$v.Port}}</td>
-                            <td>{{$v.SystemInfo}}</td>
+                            <td>{{$v.Key}}</td>
+                            <td style="color:darkred">{{if eq $v.Status 1}} 已分配 {{else if eq $v.Status 2}} 禁用 {{else if eq $v.Status 3}} 运行中 {{else}} 未分配 {{end}}</td>
+                            <td>{{$v.Note}}</td>
+                            <td>
+                                <a class="btn btn-info" href="{{urlfor "WorkerController.View" "id" $v.Id}}">
+                                    <i class="icon-white"></i> 详情
+                                </a>
+                            </td>
                         </tr>
                         {{end}}
                         </tbody>

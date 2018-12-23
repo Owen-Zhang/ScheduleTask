@@ -4,6 +4,7 @@ import "ScheduleTask/taskworker/ctrl"
 import "github.com/gin-gonic/gin"
 
 type ApiServerArg struct {
+	Key  string
 	Ip   string
 	Bind string
 	Note string

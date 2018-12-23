@@ -16,6 +16,7 @@ import (
 	"ScheduleTask/utils/system"
 	"github.com/Owen-Zhang/cron"
 	"ScheduleTask/taskserver/app/libs"
+	"github.com/astaxie/beego/logs"
 	"ScheduleTask/taskserver/app/healthy"
 	"ScheduleTask/taskserver/app/models/response"
 )
@@ -35,6 +36,7 @@ func (this *TaskController) List() {
 	groups, _ := dataaccess.TaskGroupGetList(1, 100)
 	result, count := dataaccess.TaskGetList(page, this.pageSize, -1, groupId, "")
 	list := make([]map[string]interface{}, len(result))
+	logs.Info(len(result))
 	for k, v := range result {
 		row := make(map[string]interface{})
 		row["id"] = v.Id

@@ -7,6 +7,7 @@ storage:
     port: 3306
 #worker相关信息配制(ip地址是要报告给center，推送任务时要用到)
 apiserver:
+    key:
     ip: 192.168.0.103
     bind: :8985
     note: 本机测试相关task

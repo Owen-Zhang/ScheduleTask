@@ -11,14 +11,14 @@ import (
 // 保存worker的心跳日志
 func (this *DataStorage) AddWorkerlogs(info *system.WorkerInfo, status int) error {
 	_, err := this.db.Exec(
-		"INSERT into worker_log(name, key, ip, port, osname, Note, status) VALUES(?,?,?,?,?,?,?)",
+		"INSERT into worker_log(`name`, `key`, ip, port, osname, Note, `status`) VALUES(?,?,?,?,?,?,?)",
 		info.Name, info.WorkerKey, info.Ip, info.Port, info.OsName, info.Note, status)
 	return err
 }
 // 新增worker
 func (this *DataStorage) NewWorker(obj *model.Worker) error {
 	_, err := this.db.Exec(
-		"INSERT into worker(name, Note, key, status) VALUES(?,?,?,?)",
+		"INSERT into worker(`name`, Note, `key`, `status`) VALUES(?,?,?,?)",
 		obj.Name, obj.Note, obj.Key, obj.Status)
 	return err
 }
@@ -33,7 +33,7 @@ func (this *DataStorage) UpdateWorkerInfo(obj *model.Worker) error {
 
 //删除worker
 func (this *DataStorage) DeleteWorker(id int) error  {
-	stmt, _ := this.db.Prepare("update worker set status = 0 where id = ?")
+	stmt, _ := this.db.Prepare("update worker set `status` = 0 where id = ?")
 	defer stmt.Close()
 	result, err := stmt.Exec(id)
 	if err != nil {
@@ -55,11 +55,7 @@ func (this *DataStorage) WorkerGetList(page, pageSize int) ([]*model.Worker, int
 	}
 
 	rows, err := this.db.Query(
-		`SELECT
-					id, name, key, note, status
-				from worker
-				order by status desc, id ASC
-				LIMIT ?, ?;`, (page - 1)*pageSize, pageSize)
+		"SELECT id, `name`, `key`, note, `status` from worker order by `status` desc, id ASC LIMIT ?, ?;", (page - 1)*pageSize, pageSize)
 
 	if err != nil {
 		fmt.Printf("WorkerGetList has wrong: %s\n", err)
@@ -95,8 +91,8 @@ func (this *DataStorage) WorkerGetListCount() int {
 }
 
 //查询出所有的worker机器(status = 2表示全部), 1表示正常，0表示不可用
-func (this *DataStorage) GetWorkerList(status int, systeminfo string) ([]*model.Worker, error) {
-	rows, err := this.db.Query("SELECT id, name, key, note, status from worker where (? = 2 or ? = status);", status, status)
+func (this *DataStorage) GetWorkerList(status int) ([]*model.Worker, error) {
+	rows, err := this.db.Query("SELECT id, `name`, `key`, note, `status` from worker where (? = 2 or ? = `status`);", status, status)
 	if err != nil {
 		return nil, err
 	}
@@ -122,16 +118,16 @@ func (this *DataStorage) GetWorkerList(status int, systeminfo string) ([]*model.
 
 
 // 根据名称查询单个worker(用名字或者id查詢worker)
-func (this *DataStorage) GetOneWorker(name string, id int) (*model.Worker, error) {
-	if name == "" && id == 0 {
-		return nil, errors.New("one of name or id must has values")
+func (this *DataStorage) GetOneWorker(name, key string, id int) (*model.Worker, error) {
+	if name == "" && id == 0 && key == "" {
+		return nil, errors.New("one of name or key or id must has values")
 	}
 
-	var nameT, key string
+	var nameT, keyT string
 	var idT, status int
 
-	row := this.db.QueryRow("SELECT id, name, key, status from worker where (? = '' or name = ?) and (? = 0 or ? = id) limit 1;", name,name,id,id)
-	if er := row.Scan(&idT, &nameT, &key, &status); er != nil {
+	row := this.db.QueryRow("SELECT id, `name`, `key`, `status` from worker where (? = '' or `name` = ?) and (? = '' or `key` = ?) and (? = 0 or ? = id) limit 1;", name,name,key,key,id,id)
+	if er := row.Scan(&idT, &nameT, &keyT, &status); er != nil {
 		if er == sql.ErrNoRows {
 			return nil, nil
 		}
@@ -141,7 +137,7 @@ func (this *DataStorage) GetOneWorker(name string, id int) (*model.Worker, error
 	return &model.Worker{
 		Id			: idT,
 		Name		: nameT,
-		Key			: key,
+		Key			: keyT,
 		Status		: status,
 	}, nil
 }

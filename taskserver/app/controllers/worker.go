@@ -4,6 +4,8 @@ import (
 	"ScheduleTask/model"
 	"strings"
 	"ScheduleTask/utils/system"
+	"github.com/astaxie/beego/logs"
+	"ScheduleTask/taskserver/app/healthy"
 )
 
 type WorkerController struct {
@@ -12,7 +14,17 @@ type WorkerController struct {
 
 
 func (this *WorkerController) List() {
-	list, _ := dataaccess.GetWorkerList(2, "")
+	list, _ := dataaccess.GetWorkerList(2)
+
+	//将客户端报告信息填充到列表中
+	for _,value := range  healthy.Health.WorkerList  {
+		for _, temp := range list {
+			if value.WorkerInfo.WorkerKey == temp.Key {
+				temp.Status = 3
+				break;
+			}
+		}
+	}
 
 	this.Data["pageTitle"] = "worker列表"
 	this.Data["list"] = list
@@ -31,11 +43,12 @@ func (this *WorkerController) SaveWork() {
 
 	worker.Name = strings.TrimSpace(this.GetString("worker_name"))
 	worker.Note = strings.TrimSpace(this.GetString("worker_note"))
+	logs.Info(worker.Note)
 	worker.Key = system.GetUuid();
 	worker.Status = 0
 
-	_, errT := dataaccess.GetOneWorker(worker.Name, 0)
-	if errT == nil {
+	temp, _ := dataaccess.GetOneWorker(worker.Name, "", 0)
+	if temp != nil {
 		this.ajaxMsg("已存在相同的worker名称", MSG_ERR)
 	}
 
@@ -50,7 +63,7 @@ func (this *WorkerController) SaveWork() {
 func (this *WorkerController) View() {
 	id, _ := this.GetInt("id")
 
-	worker, err := dataaccess.GetOneWorker("", id)
+	worker, err := dataaccess.GetOneWorker("", "", id)
 	if err != nil {
 		this.showMsg(err.Error())
 	}
@@ -58,5 +71,5 @@ func (this *WorkerController) View() {
 	this.Data["pageTitle"] = "查看worker"
 	this.Data["worker"] = worker
 	this.Data["isview"] = 1
-	this.display()
+	this.display("worker/add")
 }

@@ -1,20 +1,20 @@
 package system
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"os"
-	"strings"
 	"path"
-	"fmt"
-	"errors"
-	"github.com/satori/go.uuid"
+	"strings"
+
 	"github.com/mholt/archiver"
+	uuid "github.com/satori/go.uuid"
 
 	"os/exec"
 )
 
 func FileExist(filename string) bool {
-
 	fi, err := os.Stat(filename)
 	return (err == nil || os.IsExist(err)) && !fi.IsDir()
 }
@@ -95,9 +95,8 @@ func DirectoryCopy(source string, dest string) error {
 	return nil
 }
 
-
 // 获取文件名带后缀
-func FileNameWithExt(filepath string) string  {
+func FileNameWithExt(filepath string) string {
 	if filepath == "" {
 		return ""
 	}
@@ -123,12 +122,12 @@ func FileName(path string) string {
 }
 
 // 生成UUID的文件名
-func CreateUuidFile(filepath string) string  {
+func CreateUuidFile(filepath string) string {
 	ext := Ext(filepath)
 	if ext == "" {
 		return ""
 	}
-	return fmt.Sprintf("%s%s",uuid.NewV4().String(), ext)
+	return fmt.Sprintf("%s%s", uuid.NewV4().String(), ext)
 }
 
 //生成UUID字符串
@@ -137,7 +136,7 @@ func GetUuid() string {
 }
 
 // 判断文件类型是否为想要类型
-func  CheckFileExt(exts []string, filepath string) bool  {
+func CheckFileExt(exts []string, filepath string) bool {
 	if len(exts) == 0 {
 		return true
 	}
@@ -153,7 +152,7 @@ func  CheckFileExt(exts []string, filepath string) bool  {
 
 //判断文件是否存在
 func IsExist(filepath string) bool {
-	if (filepath == "") {
+	if filepath == "" {
 		return false
 	}
 	_, err := os.Stat(filepath)
@@ -161,7 +160,7 @@ func IsExist(filepath string) bool {
 }
 
 //找出url中的文件名，如http://www.baidu.com/aaa/12.zip?name=sdfasd 要取出12.zip文件名
-func UrlFileName(url string) string  {
+func UrlFileName(url string) string {
 	array := strings.Split(url, "/")
 	length := len(array)
 	if length <= 0 {
@@ -201,6 +200,6 @@ func GetCurrentPath() string {
 	s = strings.Replace(s, "\\", "/", -1)
 	s = strings.Replace(s, "\\\\", "/", -1)
 	i := strings.LastIndex(s, "/")
-	path := string(s[0 : i])
+	path := string(s[0:i])
 	return path
 }

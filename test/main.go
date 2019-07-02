@@ -2,8 +2,9 @@ package main
 
 import (
 	//"fmt"
-	//"context"
-	//"time"
+	"context"
+	"time"
+	"math/rand"
 	//"strconv"
 	//"ScheduleTask/test/rabbitmq"
 	"fmt"
@@ -47,13 +48,53 @@ func main() {
 	//rabbitmq.Publish()
 	//rabbitmq.SingleRecieve()
 	//rabbitmq.RefleshConnection()
+	//testslice()
 
-	err := fmt.Errorf("ddd%s", "ssss")
-	fmt.Println(err)
-	fmt.Println("dddd")
-
-	testslice()
+	testContext()
 }
+
+func testContext()  {
+	ctx, cancel := context.WithCancel(context.Background())
+	eatNum := chiHanBao(ctx)
+	for n := range eatNum {
+		if n >= 10 {
+			cancel()
+			break
+		}
+	}
+
+	fmt.Println("正在统计结果。。。")
+	time.Sleep(2 * time.Second)
+}
+
+func chiHanBao(ctx context.Context) <-chan int {
+	c := make(chan int)
+	// 个数
+	n := 0
+	// 时间
+	t := 0
+	go func() {
+		for {
+			time.Sleep(time.Second)
+			select {
+			case <-ctx.Done():
+				fmt.Printf("耗时 %d 秒，吃了 %d 个汉堡 \n", t, n)
+				return
+			case c <- n:
+				incr := rand.Intn(5)
+				n += incr
+				if n >= 10 {
+					n = 10
+				}
+				t++
+				fmt.Printf("我吃了 %d 个汉堡\n", n)
+			}
+		}
+	}()
+	return c
+}
+
+
 
 func testslice() {
 	var arr = [4]int{1, 2, 3, 4}

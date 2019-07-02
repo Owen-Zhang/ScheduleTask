@@ -8,6 +8,7 @@ import (
 	//"strconv"
 	//"ScheduleTask/test/rabbitmq"
 	"fmt"
+	"ScheduleTask/utils/system"
 )
 
 func main() {
@@ -50,7 +51,28 @@ func main() {
 	//rabbitmq.RefleshConnection()
 	//testslice()
 
-	testContext()
+	//testContext()
+
+	key := system.CryptoSHA256("test")
+	fmt.Println(key)
+
+	var (
+		err error
+		token string
+	)
+
+	if token, err = system.Encrypt(`{"aaaa":"cccc","bb":456}`, key); err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(token)
+	}
+
+	value, flag := system.Decrypt(token, key)
+	if flag {
+		fmt.Println(value)
+	} else {
+		fmt.Print("dddd")
+	}
 }
 
 func testContext()  {

@@ -26,6 +26,7 @@ func Encrypt(content, key string ) (t string, err error) {
 */
 
 func Decrypt(tokenStr, key string) (interface{}, bool) {
+
 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
@@ -33,14 +34,9 @@ func Decrypt(tokenStr, key string) (interface{}, bool) {
 		return []byte(key), nil
 	})
 
-	fmt.Println(token)
-
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && claims.Valid() != nil {
-		return claims, ok
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && claims.Valid() == nil {
+		return claims["content"], ok
 	} else {
-		fmt.Println(claims["content"])
-
-		fmt.Println("not ok")
 		fmt.Println(err)
 		return "", false
 	}

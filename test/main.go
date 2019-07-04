@@ -9,6 +9,7 @@ import (
 	//"ScheduleTask/test/rabbitmq"
 	"fmt"
 	"ScheduleTask/utils/system"
+	"strings"
 )
 
 func main() {
@@ -61,13 +62,17 @@ func main() {
 		token string
 	)
 
-	if token, err = system.Encrypt(`{"aaaa":"cccc","bb":456}`, key); err != nil {
+	if token, err = system.Encrypt(`{"aaaa":"cccc","bb":456}`, "11"); err != nil {
 		fmt.Println(err)
 	} else {
-		fmt.Println(token)
+
 	}
 
-	value, flag := system.Decrypt(token, key)
+	fmt.Println(token)
+	changeToken := strings.Replace(token, "9", "b", -1)
+	fmt.Println(changeToken)
+
+	value, flag := system.Decrypt(changeToken, "11")
 	if flag {
 		fmt.Println(value)
 	} else {

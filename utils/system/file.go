@@ -14,19 +14,20 @@ import (
 	"os/exec"
 )
 
+//FileExist 验证文件是否存在
 func FileExist(filename string) bool {
 	fi, err := os.Stat(filename)
 	return (err == nil || os.IsExist(err)) && !fi.IsDir()
 }
 
+//DirExist 验证目录是否存在
 func DirExist(dirname string) bool {
-
 	fi, err := os.Stat(dirname)
 	return (err == nil || os.IsExist(err)) && fi.IsDir()
 }
 
+//FileCopy 复制文件
 func FileCopy(source string, dest string) (int64, error) {
-
 	sourcefile, err := os.Open(source)
 	if err != nil {
 		return 0, err
@@ -57,8 +58,8 @@ func FileCopy(source string, dest string) (int64, error) {
 	return w, nil
 }
 
+//DirectoryCopy 复制目录
 func DirectoryCopy(source string, dest string) error {
-
 	sourceinfo, err := os.Stat(source)
 	if err != nil {
 		return err
@@ -95,7 +96,7 @@ func DirectoryCopy(source string, dest string) error {
 	return nil
 }
 
-// 获取文件名带后缀
+//FileNameWithExt 获取文件名带后缀
 func FileNameWithExt(filepath string) string {
 	if filepath == "" {
 		return ""
@@ -103,7 +104,7 @@ func FileNameWithExt(filepath string) string {
 	return path.Base(filepath)
 }
 
-// 获取文件后缀
+//Ext 获取文件后缀
 func Ext(filepath string) string {
 	fileName := FileNameWithExt(filepath)
 	if fileName == "" {
@@ -112,7 +113,7 @@ func Ext(filepath string) string {
 	return path.Ext(fileName)
 }
 
-// 获取文件后缀
+//FileName 获取文件名,不包含后缀
 func FileName(path string) string {
 	fileName := FileNameWithExt(path)
 	if fileName == "" {
@@ -121,7 +122,7 @@ func FileName(path string) string {
 	return strings.TrimSuffix(fileName, Ext(path))
 }
 
-// 生成UUID的文件名
+//CreateUuidFile 生成UUID的文件名
 func CreateUuidFile(filepath string) string {
 	ext := Ext(filepath)
 	if ext == "" {
@@ -130,12 +131,12 @@ func CreateUuidFile(filepath string) string {
 	return fmt.Sprintf("%s%s", uuid.NewV4().String(), ext)
 }
 
-//生成UUID字符串
+//GetUuid 生成UUID字符串
 func GetUuid() string {
 	return uuid.NewV4().String()
 }
 
-// 判断文件类型是否为想要类型
+//CheckFileExt 判断文件类型是否为想要类型
 func CheckFileExt(exts []string, filepath string) bool {
 	if len(exts) == 0 {
 		return true
@@ -150,7 +151,7 @@ func CheckFileExt(exts []string, filepath string) bool {
 	return false
 }
 
-//判断文件是否存在
+//IsExist 判断文件是否存在
 func IsExist(filepath string) bool {
 	if filepath == "" {
 		return false
@@ -159,7 +160,7 @@ func IsExist(filepath string) bool {
 	return err == nil || os.IsExist(err)
 }
 
-//找出url中的文件名，如http://www.baidu.com/aaa/12.zip?name=sdfasd 要取出12.zip文件名
+//UrlFileName 找出url中的文件名，如http://www.baidu.com/aaa/12.zip?name=sdfasd 要取出12.zip文件名
 func UrlFileName(url string) string {
 	array := strings.Split(url, "/")
 	length := len(array)
@@ -173,25 +174,24 @@ func UrlFileName(url string) string {
 	return arrry2[0]
 }
 
+//UnzipFile 解压
 func UnzipFile(filePath, rundatafolder string) error {
 	if filePath == "" {
 		return errors.New("filePath is empty")
 	}
-
 	if !IsExist(rundatafolder) {
 		if err := os.MkdirAll(rundatafolder, 0777); err != nil {
 			return err
 		}
 	}
-
-	if err := archiver.Zip.Open(filePath, rundatafolder); err != nil {
+	if err := archiver.NewZip().Unarchive(filePath, rundatafolder); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-//获取目录的根目录如：D:/ddd/
+//GetCurrentPath 获取目录的根目录如：D:/ddd/
 func GetCurrentPath() string {
 	s, err := exec.LookPath(os.Args[0])
 	if err != nil {

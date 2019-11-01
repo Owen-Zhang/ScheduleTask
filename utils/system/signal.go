@@ -9,7 +9,6 @@ import (
 type QuitFunc func()
 
 func InitSignal(fn QuitFunc) {
-
 NEW_SIGNAL:
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT, syscall.SIGKILL)

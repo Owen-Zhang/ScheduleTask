@@ -1,24 +1,25 @@
 package controllers
 
 import (
-	"os"
-	"fmt"
-	"time"
+	"ScheduleTask/model"
+	"ScheduleTask/taskserver/app/healthy"
+	"ScheduleTask/taskserver/app/libs"
+	"ScheduleTask/taskserver/app/models/response"
+	"ScheduleTask/utils/system"
+	"encoding/base64"
 	"errors"
-	"strings"
-	"strconv"
+	"fmt"
 	"io/ioutil"
 	"net/http"
-	"encoding/base64"
-	"ScheduleTask/model"
-	"github.com/imroc/req"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/astaxie/beego"
-	"ScheduleTask/utils/system"
-	"github.com/Owen-Zhang/cron"
-	"ScheduleTask/taskserver/app/libs"
 	"github.com/astaxie/beego/logs"
-	"ScheduleTask/taskserver/app/healthy"
-	"ScheduleTask/taskserver/app/models/response"
+	"github.com/imroc/req"
+	"github.com/zkfy/cron"
 )
 
 type TaskController struct {
@@ -48,18 +49,18 @@ func (this *TaskController) List() {
 		row["tasktype"] = v.TaskType
 
 		row["groupname"] = ""
-		for _,val := range groups {
+		for _, val := range groups {
 			if val.Id == v.GroupId {
 				row["groupname"] = val.GroupName
 			}
 		}
 
-		row["workname"] = "未分配";
+		row["workname"] = "未分配"
 		ip, port := healthy.FindWorkerByWorkerKey(v.WorkerKey)
-		if (ip != "" && port != "") {
+		if ip != "" && port != "" {
 			row["workname"] = fmt.Sprintf("%s:%s", ip, port)
 		}
-			
+
 		list[k] = row
 	}
 
@@ -137,7 +138,7 @@ func (this *TaskController) Edit() {
 	this.Data["groups"] = groups
 	this.Data["task"] = task
 	this.Data["pageTitle"] = "编辑任务"
-	
+
 	status := this.GetString("status", "")
 	this.Data["status"] = status
 
@@ -201,7 +202,7 @@ func (this *TaskController) SaveTask() {
 	task.ApiBody = strings.TrimSpace(this.GetString("post_body"))
 
 	useruploadfile := strings.TrimSpace(this.GetString("old_zip_file"))
-	
+
 	isUploadNewFile := false
 	if task.TaskType == 1 && task.OldZipFile != useruploadfile {
 		isUploadNewFile = true
@@ -225,13 +226,13 @@ func (this *TaskController) SaveTask() {
 		task.NotifyEmail = strings.Join(emailList, ";")
 	}
 
-	if task.Name == "" || task.CronSpec == "" || 
-		((task.TaskType == 0 || task.TaskType == 1) && task.Command == "") || 
-		(task.TaskType == 2 && (task.TaskApiUrl == "" || task.TaskApiMethod == ""))  {
+	if task.Name == "" || task.CronSpec == "" ||
+		((task.TaskType == 0 || task.TaskType == 1) && task.Command == "") ||
+		(task.TaskType == 2 && (task.TaskApiUrl == "" || task.TaskApiMethod == "")) {
 		resultData.Msg = "请填写完整信息"
 		this.jsonResult(resultData)
 	}
-	
+
 	if _, err := cron.Parse(task.CronSpec); err != nil {
 		resultData.Msg = "cron表达式无效"
 		this.jsonResult(resultData)
@@ -241,7 +242,7 @@ func (this *TaskController) SaveTask() {
 		/*new_temp_file: 记录处理过的文件名(为了保存文件名不重复，重新取文件名); OldZipFile: 用户上传的文件名*/
 		runFileName := strings.TrimSpace(this.GetString("new_temp_file"))
 
-		filepath := model.ServerTempFileFolder + "/" +  runFileName
+		filepath := model.ServerTempFileFolder + "/" + runFileName
 		//上传文件到文件服务器
 		if system.IsExist(filepath) {
 			filename, err := this.uploadfile(filepath)
@@ -290,7 +291,7 @@ func (this *TaskController) uploadfile(filename string) (string, error) {
 	}
 	defer fileopen.Close()
 
-	fd,err2 := ioutil.ReadAll(fileopen)
+	fd, err2 := ioutil.ReadAll(fileopen)
 	if err2 != nil {
 		fmt.Println(err2.Error())
 		return "", err2
@@ -299,9 +300,9 @@ func (this *TaskController) uploadfile(filename string) (string, error) {
 
 	fileresponse, err :=
 		req.Post(url, req.BodyJSON(&model.Fileinfo{
-			FilePath: "job",
+			FilePath:       "job",
 			FileSuffixName: "zip",
-			FileContent: encodeString,
+			FileContent:    encodeString,
 		}))
 	if err != nil {
 		return "", err
@@ -405,7 +406,7 @@ func (this *TaskController) Start() {
 		Msg:       "",
 	}
 	id, _ := this.GetInt("id")
-	
+
 	if id <= 0 {
 		result.Msg = "请操作正常的任务"
 		this.jsonResult(result)
@@ -432,7 +433,7 @@ func (this *TaskController) Start() {
 	}
 
 	//向worker发送信息
-	res, err := req.Post(posturl, req.Param{"id" : id})
+	res, err := req.Post(posturl, req.Param{"id": id})
 	if err != nil || res.Response().StatusCode != http.StatusOK {
 		if err == nil {
 			result.Msg = "[Start]通知客戶端失敗"
@@ -456,7 +457,7 @@ func (this *TaskController) Start() {
 }
 
 // 直接运行任务
-func (this *TaskController) Run()  {
+func (this *TaskController) Run() {
 	result := &response.ResultData{
 		IsSuccess: false,
 		Msg:       "",
@@ -487,7 +488,7 @@ func (this *TaskController) Run()  {
 	//从当前的worker库中查找合适的worker
 	ip, port := healthy.FindWorkerByWorkerKey(task.WorkerKey)
 	if ip == "" || port == "" {
-		result.Msg = fmt.Sprintf("当前运行的worker[%s:%s]不能正常向中心报告机器状态,此时不能完成你的运行命令", ip,port)
+		result.Msg = fmt.Sprintf("当前运行的worker[%s:%s]不能正常向中心报告机器状态,此时不能完成你的运行命令", ip, port)
 		this.jsonResult(result)
 	}
 
@@ -500,7 +501,7 @@ func (this *TaskController) Run()  {
 		}
 		this.jsonResult(result)
 	}
-	
+
 	this.jsonResult(&response.ResultData{
 		IsSuccess: true,
 		Msg:       "",
@@ -517,14 +518,14 @@ func (this *TaskController) Pause() {
 	result := &response.ResultData{
 		IsSuccess: false,
 		Msg:       "",
-	}	
-	
+	}
+
 	id, _ := this.GetInt("id")
 	if id <= 0 {
 		result.Msg = "请操作正常的任务"
 		this.jsonResult(result)
 	}
-	
+
 	task, err := dataaccess.GetTaskById(id)
 	if err != nil {
 		result.Msg = err.Error()
@@ -538,7 +539,7 @@ func (this *TaskController) Pause() {
 
 	ip, port := healthy.FindWorkerByWorkerKey(task.WorkerKey)
 	if ip == "" || port == "" {
-		result.Msg = fmt.Sprintf("当前运行的worker[%s:%s]不能正常向中心报告机器状态,此时不能完成你的运行命令", ip,port)
+		result.Msg = fmt.Sprintf("当前运行的worker[%s:%s]不能正常向中心报告机器状态,此时不能完成你的运行命令", ip, port)
 		this.jsonResult(result)
 	}
 
@@ -556,7 +557,7 @@ func (this *TaskController) Pause() {
 		result.Msg = err.Error()
 		this.jsonResult(result)
 	}
-	
+
 	this.jsonResult(&response.ResultData{
 		IsSuccess: true,
 		Msg:       "",
@@ -574,7 +575,7 @@ func (this *TaskController) Delete() {
 		IsSuccess: false,
 		Msg:       "",
 		Data:      true,
-	}	
+	}
 	id, _ := this.GetInt("id")
 	if id <= 0 {
 		result.Msg = "请操作正常的任务"
@@ -594,7 +595,7 @@ func (this *TaskController) Delete() {
 
 	ip, port := healthy.FindWorkerByWorkerKey(task.WorkerKey)
 	if ip == "" || port == "" {
-		result.Msg = fmt.Sprintf("当前运行的worker[%s:%s]不能正常向中心报告机器状态,此时不能完成你的运行命令", ip,port)
+		result.Msg = fmt.Sprintf("当前运行的worker[%s:%s]不能正常向中心报告机器状态,此时不能完成你的运行命令", ip, port)
 		this.jsonResult(result)
 	}
 	posturl := fmt.Sprintf(model.WorkerUrl, ip, port, "deletetask")

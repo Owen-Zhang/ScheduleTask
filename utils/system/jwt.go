@@ -8,9 +8,7 @@ import (
 	"encoding/hex"
 )
 
-/*
-  Encrypt 加密
-*/
+//Encrypt 加密
 func Encrypt(content, key string ) (t string, err error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
@@ -21,12 +19,8 @@ func Encrypt(content, key string ) (t string, err error) {
 	return
 }
 
-/*
-  Decrypt 解密
-*/
-
+//Decrypt 解密
 func Decrypt(tokenStr, key string) (interface{}, bool) {
-
 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])

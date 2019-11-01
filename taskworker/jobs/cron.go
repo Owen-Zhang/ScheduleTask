@@ -1,11 +1,11 @@
 package jobs
 
 import (
-	"ScheduleTask/storage"
 	"ScheduleTask/model"
+	"ScheduleTask/storage"
 	"sync"
 
-	"github.com/Owen-Zhang/cron"
+	"github.com/Owen-Zhang/cron2"
 )
 
 type CronArg struct {
@@ -49,7 +49,7 @@ func AddJob(task *model.Task) bool {
 	return false
 }
 
-//删除运行中的任务
+//RemoveJob 删除运行中的任务
 func RemoveJob(id int) {
 	if !ExistJob(id) {
 		return
@@ -65,7 +65,7 @@ func RemoveJob(id int) {
 }
 
 //判断任务是否在指行队列中
-func ExistJob(id int) bool  {
+func ExistJob(id int) bool {
 	entries := mainCron.Entries()
 	for _, e := range entries {
 		if v, flag := e.Job.(*Job); flag {
@@ -97,4 +97,3 @@ func getEntryById(id int) *cron.Entry {
 	}
 	return nil
 }
-
